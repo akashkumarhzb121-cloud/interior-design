@@ -32,7 +32,7 @@ export default function ProjectDetailPage() {
       try {
         const [projectRes, allProjectsRes] = await Promise.all([projectsApi.getById(id), projectsApi.getAll()])
         setProject(projectRes.data)
-        const related = (allProjectsRes.data || []).filter((p) => p._id !== id && p.category === projectRes.data?.category).slice(0, 3)
+        const related = (allProjectsRes.data || []).filter((p) => (p._id || p.id) !== id && p.category === projectRes.data?.category).slice(0, 3)
         setRelatedProjects(related)
       } catch (error) {
         console.log('[v0] Error fetching project:', error)
@@ -61,7 +61,18 @@ export default function ProjectDetailPage() {
     )
   }
 
-  if (!project) return null
+  if (!project) {
+    return (
+      <div className="min-h-screen pt-24 pb-16 bg-background flex items-center justify-center px-4">
+        <div className="max-w-xl text-center">
+          <p className="text-lg text-muted-foreground mb-6">We could not load that project right now. Please return to the projects page or try again.</p>
+          <Link to="/projects">
+            <Button variant="outline" className="mx-auto">Back to Projects</Button>
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   const images = project.images?.length ? project.images : [
     'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=80',
@@ -78,7 +89,7 @@ export default function ProjectDetailPage() {
           </motion.div>
 
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-            <Swiper modules={[Navigation, Thumbs, Pagination]} navigation={{ prevEl: '.swiper-button-prev-custom', nextEl: '.swiper-button-next-custom' }} thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }} pagination={{ clickable: true }} className="aspect-[16/9] rounded-2xl overflow-hidden">
+            <Swiper modules={[Navigation, Thumbs, Pagination]} navigation={{ prevEl: '.swiper-button-prev-custom', nextEl: '.swiper-button-next-custom' }} thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }} pagination={{ clickable: true }} className="aspect-[16/9] min-h-[260px] rounded-2xl overflow-hidden">
               {images.map((image, index) => (
                 <SwiperSlide key={index}>
                   <div className="w-full h-full bg-cover bg-center cursor-pointer relative group" style={{ backgroundImage: `url(${image})` }} onClick={() => openLightbox(index)}>
@@ -116,7 +127,7 @@ export default function ProjectDetailPage() {
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <div className="bg-card border border-border rounded-2xl p-6 sticky top-28">
+              <div className="bg-card border border-border rounded-2xl p-6 lg:sticky lg:top-28">
                 <h3 className="text-lg font-semibold mb-4">Project Details</h3>
                 <dl className="space-y-4">
                   <div className="flex justify-between py-2 border-b border-border"><dt className="text-muted-foreground">Category</dt><dd className="font-medium">{project.category}</dd></div>
@@ -136,9 +147,11 @@ export default function ProjectDetailPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <SectionHeader badge="More Projects" title="Related Projects" description="Explore more of our work in this category." />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {relatedProjects.map((relatedProject, index) => (
-                <motion.div key={relatedProject._id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="group">
-                  <Link to={`/projects/${relatedProject._id}`}>
+              {relatedProjects.map((relatedProject, index) => {
+                const relatedProjectId = relatedProject._id || relatedProject.id
+                return (
+                  <motion.div key={relatedProjectId} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="group">
+                    <Link to={`/projects/${relatedProjectId}`}>
                     <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
                       <img src={relatedProject.images?.[0] || 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80'} alt={relatedProject.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -149,7 +162,7 @@ export default function ProjectDetailPage() {
                     </div>
                   </Link>
                 </motion.div>
-              ))}
+              )})}
             </div>
           </div>
         </Section>

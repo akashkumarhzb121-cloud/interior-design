@@ -60,7 +60,7 @@ export default function HomePage() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative h-screen min-h-[700px] overflow-hidden">
+      <section className="relative min-h-[70vh] sm:min-h-[75vh] md:min-h-[80vh] lg:min-h-[90vh] overflow-hidden">
         <motion.div style={{ opacity: heroOpacity, scale: heroScale }} className="absolute inset-0">
           <Swiper
             modules={[Autoplay, EffectFade, Pagination]}
@@ -187,7 +187,7 @@ export default function HomePage() {
                   <ProjectCardSkeleton key={i} />
                 ))
               : projects.map((project, index) => (
-                  <ProjectCard key={project._id} project={project} index={index} />
+                  <ProjectCard key={project._id || project.id || index} project={project} index={index} />
                 ))}
           </div>
         </div>
@@ -361,6 +361,8 @@ export default function HomePage() {
 }
 
 function ProjectCard({ project, index }) {
+  const projectId = project._id || project.id
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -369,7 +371,7 @@ function ProjectCard({ project, index }) {
       transition={{ delay: index * 0.1 }}
       className="group"
     >
-      <Link to={`/projects/${project._id}`}>
+      <Link to={projectId ? `/projects/${projectId}` : '/projects'}>
         <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
           <img
             src={project.images?.[0] || 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80'}

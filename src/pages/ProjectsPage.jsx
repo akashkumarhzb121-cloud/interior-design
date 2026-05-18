@@ -62,9 +62,9 @@ export default function ProjectsPage() {
 
   return (
     <>
-      <section className="relative py-24 md:py-32 bg-charcoal overflow-hidden">
+      <section className="relative min-h-[60vh] sm:min-h-[64vh] md:min-h-[70vh] lg:min-h-[75vh] overflow-hidden bg-charcoal">
         <div className="absolute inset-0 opacity-20"><img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1920&q=80" alt="" className="w-full h-full object-cover" /></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-28 lg:py-32">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl">
             <span className="inline-block px-4 py-2 bg-gold/20 text-gold text-sm font-medium rounded-full mb-6">Our Portfolio</span>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white">Explore Our Projects</h1>
@@ -73,7 +73,7 @@ export default function ProjectsPage() {
         </div>
       </section>
 
-      <Section className="bg-background py-8 sticky top-20 z-20 border-b border-border">
+      <Section className="bg-background py-8 lg:sticky lg:top-20 z-20 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
             <div className="hidden lg:flex items-center gap-2">
@@ -105,7 +105,7 @@ export default function ProjectsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">{Array.from({ length: 9 }).map((_, i) => <ProjectCardSkeleton key={i} />)}</div>
           ) : filteredProjects.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredProjects.map((project, index) => <ProjectCard key={project._id} project={project} index={index} />)}
+              {filteredProjects.map((project, index) => <ProjectCard key={project._id || project.id || index} project={project} index={index} />)}
             </div>
           ) : (
             <div className="text-center py-16">
@@ -129,9 +129,11 @@ export default function ProjectsPage() {
 }
 
 function ProjectCard({ project, index }) {
+  const projectId = project._id || project.id
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.05 }} className="group">
-      <Link to={`/projects/${project._id}`}>
+      <Link to={projectId ? `/projects/${projectId}` : '/projects'}>
         <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
           <img src={project.images?.[0] || 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80'} alt={project.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />

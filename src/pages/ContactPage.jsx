@@ -85,8 +85,8 @@ export default function ContactPage() {
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative">
-              <div className="sticky top-28">
-                <div className="aspect-[4/3] lg:aspect-auto lg:h-[500px] rounded-2xl overflow-hidden border border-border">
+              <div className="lg:sticky lg:top-28">
+                <div className="aspect-[4/3] lg:aspect-[5/4] lg:h-[500px] rounded-2xl overflow-hidden border border-border">
                   <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3769.459982890668!2d72.82656507520098!3d19.135952982074716!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7b63aceef0c69%3A0x2aa80cf2287dfa3b!2sOshiwara%2C%20Andheri%20West%2C%20Mumbai%2C%20Maharashtra!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin" width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade" title="Luxe Interiors Location" />
                 </div>
                 <div className="mt-4 p-4 bg-card rounded-xl border border-border">
