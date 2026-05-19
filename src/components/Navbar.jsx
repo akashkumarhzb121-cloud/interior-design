@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, Sun, Moon, Phone } from 'lucide-react'
 import { useTheme } from '@/context/ThemeContext'
@@ -19,6 +19,15 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { theme, toggleTheme } = useTheme()
   const location = useLocation()
+  const navigate = useNavigate()
+
+  const handleMobileNavClick = (href, event) => {
+    if (location.pathname === href) {
+      event.preventDefault()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+    setIsMobileMenuOpen(false)
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -138,6 +147,7 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     to={link.href}
+                    onClick={(event) => handleMobileNavClick(link.href, event)}
                     className={cn(
                       'block px-4 py-3 rounded-lg text-sm font-medium transition-colors',
                       location.pathname === link.href
@@ -150,6 +160,7 @@ export default function Navbar() {
                 ))}
                 <Link
                   to="/booking"
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className="block mx-4 mt-4 text-center px-6 py-3 bg-gold text-background rounded-full font-medium text-sm hover:bg-gold-dark transition-colors"
                 >
                   Book Consultation
