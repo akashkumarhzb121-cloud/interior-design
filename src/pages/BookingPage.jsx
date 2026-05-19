@@ -11,20 +11,36 @@ import { bookingsApi } from '../api/services';
 
 const timeSlots = [
   '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
-  '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'
+  '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM',
 ];
 
-const serviceTypes = [
-  { value: 'residential', label: 'Residential Design' },
-  { value: 'commercial', label: 'Commercial Design' },
-  { value: 'renovation', label: 'Renovation' },
-  { value: 'consultation', label: 'Design Consultation' }
+// ✅ FIX 1: Values match the backend enum exactly (Title Case)
+//    and field is named 'projectType' to match backend expectation
+const projectTypes = [
+  { value: 'Residential',  label: 'Residential Design' },
+  { value: 'Commercial',   label: 'Commercial Design' },
+  { value: 'Office',       label: 'Office Design' },
+  { value: 'Hospitality',  label: 'Hospitality Design' },
+  { value: 'Retail',       label: 'Retail Design' },
+  { value: 'Other',        label: 'Other' },
+];
+
+// ✅ FIX 2: Budget options added (accepted by backend)
+const budgetOptions = [
+  { value: 'Under $10k',   label: 'Under $10k' },
+  { value: '$10k–$25k',    label: '$10k – $25k' },
+  { value: '$25k–$50k',    label: '$25k – $50k' },
+  { value: '$50k–$100k',   label: '$50k – $100k' },
+  { value: '$100k+',       label: '$100k+' },
+  { value: 'Not sure',     label: 'Not sure' },
 ];
 
 export default function BookingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { register, handleSubmit, formState: { errors }, reset } = useForm();
+  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+    defaultValues: { budget: 'Not sure' },
+  });
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
@@ -34,7 +50,12 @@ export default function BookingPage() {
       reset();
       toast.success('Consultation booked successfully!');
     } catch (error) {
-      toast.error('Failed to book consultation. Please try again.');
+      // ✅ FIX 3: Show actual server error message to help debug
+      const msg =
+        error?.response?.data?.message ||
+        'Failed to book consultation. Please try again.';
+      toast.error(msg);
+      console.error('[BookingPage] Booking error:', error?.response?.data || error);
     } finally {
       setIsSubmitting(false);
     }
@@ -89,10 +110,17 @@ export default function BookingPage() {
                     label="Email"
                     type="email"
                     icon={Mail}
-                    {...register('email', { required: 'Email is required' })}
+                    {...register('email', {
+                      required: 'Email is required',
+                      pattern: {
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: 'Please enter a valid email',
+                      },
+                    })}
                     error={errors.email?.message}
                   />
                 </div>
+
                 <Input
                   label="Phone"
                   type="tel"
@@ -100,12 +128,23 @@ export default function BookingPage() {
                   {...register('phone', { required: 'Phone is required' })}
                   error={errors.phone?.message}
                 />
+
+                {/* ✅ FIX 1: renamed from 'serviceType' → 'projectType', values are Title Case */}
                 <Select
-                  label="Service Type"
-                  options={serviceTypes}
-                  {...register('serviceType', { required: 'Please select a service' })}
-                  error={errors.serviceType?.message}
+                  label="Project Type"
+                  options={projectTypes}
+                  {...register('projectType', { required: 'Please select a project type' })}
+                  error={errors.projectType?.message}
                 />
+
+                {/* ✅ FIX 2: Budget field added */}
+                <Select
+                  label="Budget Range"
+                  options={budgetOptions}
+                  {...register('budget')}
+                  error={errors.budget?.message}
+                />
+
                 <div className="grid sm:grid-cols-2 gap-4">
                   <Input
                     label="Preferred Date"
@@ -116,17 +155,20 @@ export default function BookingPage() {
                   />
                   <Select
                     label="Preferred Time"
-                    options={timeSlots.map(t => ({ value: t, label: t }))}
+                    options={timeSlots.map((t) => ({ value: t, label: t }))}
                     {...register('time', { required: 'Time is required' })}
                     error={errors.time?.message}
                   />
                 </div>
+
                 <Textarea
                   label="Project Details"
                   rows={4}
+                  icon={MessageSquare}
                   {...register('message')}
                   placeholder="Tell us about your project..."
                 />
+
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? 'Booking...' : 'Book Consultation'}
                 </Button>
