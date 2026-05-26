@@ -206,7 +206,7 @@ export default function BookingPage() {
                 <div className="space-y-4 text-muted-foreground">
                   <p className="flex items-center gap-3">
                     <Phone className="w-5 h-5 text-primary" />
-                    +1 (555) 123-4567
+                    +91 8863079979
                   </p>
                   <p className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-primary" />
