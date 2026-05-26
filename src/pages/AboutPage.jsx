@@ -6,28 +6,28 @@ import { Button } from '@/components/ui/Button'
 
 const team = [
   {
-    name: 'Aisha Sharma',
+    name: 'Suraj Sharma',
     role: 'Founder & Principal Designer',
     image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&q=80',
-    bio: 'With 20+ years in luxury interior design, Aisha brings her vision of timeless elegance to every project.',
+    bio: 'With 5+ years in luxury interior design, Suraj brings her vision of timeless elegance to every project.',
   },
   {
-    name: 'Vikram Mehta',
+    name: 'Sagar Sharma',
     role: 'Creative Director',
     image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
-    bio: 'Vikram leads our design team with his innovative approach to contemporary living spaces.',
+    bio: 'Sagar leads our design team with his innovative approach to contemporary living spaces.',
   },
   {
-    name: 'Priya Kapoor',
+    name: 'Nandkishor Sharma',
     role: 'Senior Interior Designer',
     image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&q=80',
-    bio: 'Specializing in residential design, Priya creates warm, inviting spaces for families across Mumbai.',
+    bio: 'Specializing in residential design, Nandkishor creates warm, inviting spaces for families across Mumbai.',
   },
   {
-    name: 'Raj Malhotra',
+    name: 'Akash Sharma',
     role: 'Project Manager',
     image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80',
-    bio: 'Raj ensures every project is delivered on time and exceeds client expectations.',
+    bio: 'Akash ensures every project is delivered on time and exceeds client expectations.',
   },
 ]
 
@@ -42,7 +42,7 @@ const milestones = [
   { year: '2010', title: 'Founded in Mumbai', description: 'Started our journey in Andheri West' },
   { year: '2014', title: 'First Design Award', description: 'Recognized for excellence in residential design' },
   { year: '2017', title: 'Expanded Services', description: 'Added commercial and hospitality design' },
-  { year: '2020', title: '200th Project', description: 'Celebrated our milestone during the pandemic' },
+  { year: '2020', title: '100th Project', description: 'Celebrated our milestone during the pandemic' },
   { year: '2024', title: 'Industry Leader', description: 'Named among Mumbai top design studios' },
 ]
 
@@ -72,7 +72,7 @@ export default function AboutPage() {
             <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
               <SectionHeader badge="Our Story" title="Where Vision Meets Craftsmanship" className="mb-6" />
               <div className="space-y-4 text-muted-foreground leading-relaxed">
-                <p>Founded in 2010 by Aisha Sharma, Luxe Interiors began with a simple vision: to bring world-class interior design to Mumbai.</p>
+                <p>Founded in 2010 by Suraj Sharma, Luxe Interiors began with a simple vision: to bring world-class interior design to Mumbai.</p>
                 <p>Our approach combines contemporary aesthetics with timeless elegance, creating spaces that are both beautiful and functional.</p>
                 <p>Today, with a team of 25+ talented designers and craftsmen, we continue to push boundaries.</p>
               </div>
