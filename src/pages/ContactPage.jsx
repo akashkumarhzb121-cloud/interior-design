@@ -10,7 +10,7 @@ import { contactApi } from '@/api/services'
 
 const contactInfo = [
   { icon: MapPin, title: 'Visit Us', details: ['Luxe Interiors Studio', 'Oshiwara, Andheri West', 'Mumbai, Maharashtra 400102'] },
-  { icon: Phone, title: 'Call Us', details: ['+91 98765 43210', '+91 22 2634 5678'] },
+  { icon: Phone, title: 'Call Us', details: ['+91 8863079979', '+91 8741072815'] },
   { icon: Mail, title: 'Email Us', details: ['hello@luxeinteriors.in', 'projects@luxeinteriors.in'] },
   { icon: Clock, title: 'Working Hours', details: ['Mon - Fri: 10:00 AM - 7:00 PM', 'Sat: 10:00 AM - 4:00 PM', 'Sun: Closed'] },
 ]
