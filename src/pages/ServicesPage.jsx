@@ -95,9 +95,9 @@ export default function ServicesPage() {
           <SectionHeader badge="Investment" title="Flexible Pricing Options" description="We offer transparent pricing tailored to your project scope." centered />
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {[
-              { title: 'Consultation', price: '₹5,000', period: 'per session', description: 'Perfect for quick guidance', features: ['2-hour session', 'Design recommendations', 'Shopping list', 'Color palette', 'Layout suggestions'], highlighted: false },
-              { title: 'Full Service', price: '₹800', period: 'per sq. ft.', description: 'Complete design and execution', features: ['Complete design concept', '3D visualizations', 'Material procurement', 'Project management', 'Installation & styling'], highlighted: true },
-              { title: 'E-Design', price: '₹25,000', period: 'per room', description: 'Remote design services', features: ['Online consultation', 'Design board', 'Furniture plan', 'Shopping links', 'Email support'], highlighted: false },
+              { title: 'Consultation', price: '₹1,000', period: 'per session', description: 'Perfect for quick guidance', features: ['2-hour session', 'Design recommendations', 'Shopping list', 'Color palette', 'Layout suggestions'], highlighted: false },
+              { title: 'Full Service', price: '₹600', period: 'per sq. ft.', description: 'Complete design and execution', features: ['Complete design concept', '3D visualizations', 'Material procurement', 'Project management', 'Installation & styling'], highlighted: true },
+              { title: 'E-Design', price: '₹15,000', period: 'per room', description: 'Remote design services', features: ['Online consultation', 'Design board', 'Furniture plan', 'Shopping links', 'Email support'], highlighted: false },
             ].map((plan, index) => (
               <motion.div key={plan.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className={cn('relative p-8 rounded-2xl border', plan.highlighted ? 'bg-charcoal text-white border-gold' : 'bg-card border-border')}>
                 {plan.highlighted && <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gold text-charcoal text-xs font-semibold rounded-full">Most Popular</span>}
