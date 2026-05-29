@@ -9,7 +9,7 @@ const team = [
     name: 'Suraj Sharma',
     role: 'Founder & Principal Designer',
         image: '/surajimg.jpeg',
-    bio: 'With 5+ years in luxury interior design, Suraj brings her vision of timeless elegance to every project.',
+    bio: 'With 2+ years in luxury interior design, Suraj brings her vision of timeless elegance to every project.',
   },
   {
     name: 'Sagar Sharma',
@@ -39,11 +39,11 @@ const values = [
 ]
 
 const milestones = [
-  { year: '2010', title: 'Founded in Mumbai', description: 'Started our journey in Andheri West' },
-  { year: '2014', title: 'First Design Award', description: 'Recognized for excellence in residential design' },
-  { year: '2017', title: 'Expanded Services', description: 'Added commercial and hospitality design' },
-  { year: '2020', title: '100th Project', description: 'Celebrated our milestone during the pandemic' },
-  { year: '2024', title: 'Industry Leader', description: 'Named among Mumbai top design studios' },
+  { year: '2020', title: 'Founded in Mumbai', description: 'Started our journey in Andheri West' },
+  { year: '2021', title: 'First Design Award', description: 'Recognized for excellence in residential design' },
+  { year: '2022', title: 'Expanded Services', description: 'Added commercial and hospitality design' },
+  { year: '2024', title: '100th Project', description: 'Celebrated our milestone during the pandemic' },
+  { year: '2025', title: 'Industry Leader', description: 'Named among Mumbai top design studios' },
 ]
 
 export default function AboutPage() {
@@ -57,9 +57,9 @@ export default function AboutPage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl">
             <span className="inline-block px-4 py-2 bg-gold/20 text-gold text-sm font-medium rounded-full mb-6">About Us</span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white">Crafting Luxury Spaces Since 2010</h1>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white">Crafting Luxury Spaces Since 2020</h1>
             <p className="mt-6 text-lg text-white/70 leading-relaxed">
-              {"Luxe Interiors is Mumbai's premier interior design studio, transforming residential and commercial spaces into extraordinary experiences."}
+              {"Modplint Interiors is Mumbai's premier interior design studio, transforming residential and commercial spaces into extraordinary experiences."}
             </p>
           </motion.div>
         </div>
@@ -72,14 +72,14 @@ export default function AboutPage() {
             <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
               <SectionHeader badge="Our Story" title="Where Vision Meets Craftsmanship" className="mb-6" />
               <div className="space-y-4 text-muted-foreground leading-relaxed">
-                <p>Founded in 2010 by Suraj Sharma, Luxe Interiors began with a simple vision: to bring world-class interior design to Mumbai.</p>
+                <p>Founded in 2020 by Suraj Sharma, Modplint Interiors began with a simple vision: to bring world-class interior design to Mumbai.</p>
                 <p>Our approach combines contemporary aesthetics with timeless elegance, creating spaces that are both beautiful and functional.</p>
-                <p>Today, with a team of 25+ talented designers and craftsmen, we continue to push boundaries.</p>
+                <p>Today, with a team of 20+ talented designers and craftsmen, we continue to push boundaries.</p>
               </div>
               <div className="mt-8 grid grid-cols-3 gap-6">
-                <div><div className="text-3xl font-serif font-bold text-gold">250+</div><div className="text-sm text-muted-foreground">Projects</div></div>
-                <div><div className="text-3xl font-serif font-bold text-gold">15+</div><div className="text-sm text-muted-foreground">Years</div></div>
-                <div><div className="text-3xl font-serif font-bold text-gold">25+</div><div className="text-sm text-muted-foreground">Team Members</div></div>
+                <div><div className="text-3xl font-serif font-bold text-gold">150+</div><div className="text-sm text-muted-foreground">Projects</div></div>
+                <div><div className="text-3xl font-serif font-bold text-gold">5+</div><div className="text-sm text-muted-foreground">Years</div></div>
+                <div><div className="text-3xl font-serif font-bold text-gold">20+</div><div className="text-sm text-muted-foreground">Team Members</div></div>
               </div>
             </motion.div>
             <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="relative">
@@ -141,7 +141,7 @@ export default function AboutPage() {
       {/* Team Section */}
       <Section className="bg-charcoal">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <SectionHeader badge="Meet the Team" title="The Creative Minds Behind Luxe" description="Our talented team brings decades of combined experience to every project." centered className="text-white [&_p]:text-white/70" />
+          <SectionHeader badge="Meet the Team" title="The Creative Minds Behind Modplint" description="Our talented team brings decades of combined experience to every project." centered className="text-white [&_p]:text-white/70" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {team.map((member, index) => (
               <motion.div key={member.name} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="group">

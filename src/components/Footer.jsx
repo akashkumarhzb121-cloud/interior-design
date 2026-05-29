@@ -72,12 +72,12 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center gap-2">
-              <span className="text-2xl font-serif font-bold text-gold">Luxe</span>
+              <span className="text-2xl font-serif font-bold text-gold">Modplint</span>
               <span className="text-2xl font-serif font-light text-primary-foreground">Interiors</span>
             </Link>
             <p className="mt-4 text-primary-foreground/70 text-sm leading-relaxed">
               Transforming spaces into extraordinary experiences. Premium interior
-              design services in Mumbai since 2010.
+              design services in Mumbai since 2020.
             </p>
             <div className="flex items-center gap-4 mt-6">
               {socialLinks.map((social) => (
@@ -148,19 +148,19 @@ export default function Footer() {
               <li className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-gold flex-shrink-0" />
                 <a
-                  href="tel:+918863079979"
+                  href="tel:+918741072815"
                   className="text-primary-foreground/70 hover:text-gold transition-colors text-sm"
                 >
-                  +91 8863079979
+                  +91 8741072815
                 </a>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-gold flex-shrink-0" />
                 <a
-                  href="mailto:hello@luxeinteriors.in"
+                  href="mailto:modplint2gmail.com"
                   className="text-primary-foreground/70 hover:text-gold transition-colors text-sm"
                 >
-                  hello@luxeinteriors.in
+                  modplint@gmail.com
                 </a>
               </li>
             </ul>
@@ -173,7 +173,7 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-primary-foreground/50 text-sm">
-              © {new Date().getFullYear()} Luxe Interiors. All rights reserved.
+              © {new Date().getFullYear()} Modplint Interiors. All rights reserved.
             </p>
             <div className="flex items-center gap-6">
               {footerLinks.legal.map((link) => (

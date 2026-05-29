@@ -56,7 +56,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <span className="text-2xl font-serif font-bold text-gold">Luxe</span>
+            <span className="text-2xl font-serif font-bold text-gold">Modplint</span>
             <span className="text-2xl font-serif font-light">Interiors</span>
           </Link>
 

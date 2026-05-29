@@ -68,7 +68,7 @@ export default function TestimonialsPage() {
 
       <Section className="bg-sand">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <SectionHeader badge="Get Started" title="Want to Experience Luxe Interiors Yourself?" description="Book a consultation and let us create a luxurious space tailored to your needs." centered />
+          <SectionHeader badge="Get Started" title="Want to Experience Modplint Interiors Yourself?" description="Book a consultation and let us create a luxurious space tailored to your needs." centered />
           <Link to="/booking">
             <Button variant="gold" size="xl" className="mt-6">
               Book Consultation

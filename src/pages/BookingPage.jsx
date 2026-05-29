@@ -27,11 +27,11 @@ const projectTypes = [
 
 // ✅ FIX 2: Budget options added (accepted by backend)
 const budgetOptions = [
-  { value: 'Under $10k',   label: 'Under $10k' },
-  { value: '$10k–$25k',    label: '$10k – $25k' },
-  { value: '$25k–$50k',    label: '$25k – $50k' },
-  { value: '$50k–$100k',   label: '$50k – $100k' },
-  { value: '$100k+',       label: '$100k+' },
+  { value: 'Under 10k',   label: 'Under 10k' },
+  { value: '10k–25k',    label: '10k – 25k' },
+  { value: '25k–50k',    label: '25k – 50k' },
+  { value: '50k–100k',   label: '50k – 100k' },
+  { value: '100k+',       label: '100k+' },
   { value: 'Not sure',     label: 'Not sure' },
 ];
 
@@ -206,15 +206,15 @@ export default function BookingPage() {
                 <div className="space-y-4 text-muted-foreground">
                   <p className="flex items-center gap-3">
                     <Phone className="w-5 h-5 text-primary" />
-                    +91 8863079979
+                    +91 8741072815
                   </p>
                   <p className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-primary" />
-                    hello@luxeinteriors.com
+                    modplint@gmail.com
                   </p>
                   <p className="flex items-center gap-3">
                     <Clock className="w-5 h-5 text-primary" />
-                    Mon - Fri: 9:00 AM - 6:00 PM
+                    Mon - Fri: 10:00 AM - 6:00 PM
                   </p>
                 </div>
               </div>

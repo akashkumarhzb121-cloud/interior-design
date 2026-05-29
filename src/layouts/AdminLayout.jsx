@@ -73,7 +73,7 @@ export default function AdminLayout() {
           {/* Logo */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-border">
             <Link to="/admin" className="flex items-center gap-2">
-              <span className="text-xl font-serif font-bold text-primary">Luxe</span>
+              <span className="text-xl font-serif font-bold text-primary">Modplint</span>
               <span className="text-xl font-serif font-light text-foreground">Admin</span>
             </Link>
             <button

@@ -21,10 +21,10 @@ const heroImages = [
 ]
 
 const stats = [
-  { icon: HomeIcon, value: '250+', label: 'Projects Completed' },
-  { icon: Users, value: '180+', label: 'Happy Clients' },
-  { icon: Award, value: '15+', label: 'Design Awards' },
-  { icon: MapPin, value: '50+', label: 'Locations in Mumbai' },
+  { icon: HomeIcon, value: '150+', label: 'Projects Completed' },
+  { icon: Users, value: '100+', label: 'Happy Clients' },
+  { icon: Award, value: '5+', label: 'Design Awards' },
+  { icon: MapPin, value: '20+', label: 'Locations in Mumbai' },
 ]
 
 export default function HomePage() {
@@ -230,8 +230,8 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <SectionHeader
-                badge="Why Luxe Interiors"
-                title="Creating Timeless Spaces Since 2010"
+                badge="Why Modplint Interiors"
+                title="Creating Timeless Spaces Since 2020"
                 description="With over a decade of experience, we've established ourselves as Mumbai's premier interior design studio, blending contemporary aesthetics with timeless elegance."
                 className="mb-8"
               />
@@ -275,7 +275,7 @@ export default function HomePage() {
                 />
               </div>
               <div className="absolute -bottom-6 -left-6 bg-gold text-charcoal p-6 rounded-2xl shadow-xl">
-                <div className="text-4xl font-serif font-bold">15+</div>
+                <div className="text-4xl font-serif font-bold">5+</div>
                 <div className="text-sm font-medium">Years of Excellence</div>
               </div>
             </motion.div>
