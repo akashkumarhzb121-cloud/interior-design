@@ -17,12 +17,7 @@ const timeSlots = [
 // ✅ FIX 1: Values match the backend enum exactly (Title Case)
 //    and field is named 'projectType' to match backend expectation
 const projectTypes = [
-  { value: 'Residential',  label: 'Residential Design' },
-  { value: 'Commercial',   label: 'Commercial Design' },
-  { value: 'Office',       label: 'Office Design' },
-  { value: 'Hospitality',  label: 'Hospitality Design' },
-  { value: 'Retail',       label: 'Retail Design' },
-  { value: 'Other',        label: 'Other' },
+ak@gmail.com
 ];
 
 // ✅ FIX 2: Budget options added (accepted by backend)
