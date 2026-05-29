@@ -14,13 +14,13 @@ const team = [
   {
     name: 'Sagar Sharma',
     role: 'Creative Director',
-    image: '/sagarimg.png',
+    image: '/sagarimg.jpeg',
     bio: 'Sagar leads our design team with his innovative approach to contemporary living spaces.',
   },
   {
     name: 'Nandkishor Sharma',
     role: 'Senior Interior Designer',
-        image: '/nanduimg.png',
+        image: '/nanduimg.jpeg',
     bio: 'Specializing in residential design, Nandkishor creates warm, inviting spaces for families across Mumbai.',
   },
   {
