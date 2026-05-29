@@ -8,25 +8,25 @@ const team = [
   {
     name: 'Suraj Sharma',
     role: 'Founder & Principal Designer',
-        image: '/stock images/surajimg.jpeg',
+        image: '/surajimg.jpeg',
     bio: 'With 5+ years in luxury interior design, Suraj brings her vision of timeless elegance to every project.',
   },
   {
     name: 'Sagar Sharma',
     role: 'Creative Director',
-    image: '/stock images/sagarimg.png',
+    image: '/sagarimg.png',
     bio: 'Sagar leads our design team with his innovative approach to contemporary living spaces.',
   },
   {
     name: 'Nandkishor Sharma',
     role: 'Senior Interior Designer',
-        image: '/stock images/nanduimg.png',
+        image: '/nanduimg.png',
     bio: 'Specializing in residential design, Nandkishor creates warm, inviting spaces for families across Mumbai.',
   },
   {
     name: 'Akash Sharma',
     role: 'Project Manager',
-    image: '/stock images/akashimg.png',
+    image: '/akashimg.png',
     bio: 'Akash ensures every project is delivered on time and exceeds client expectations.',
   },
 ]
