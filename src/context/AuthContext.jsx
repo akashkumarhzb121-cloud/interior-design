@@ -21,13 +21,15 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const response = await authApi.login({ email, password })
-    const data = response.data
-    
-    setToken(data.token)
-    setUser(data.user)
-    
-    localStorage.setItem('admin_token', data.token)
-    localStorage.setItem('admin_user', JSON.stringify(data.user))
+    // API shape: { success, message, token, data: { user } }
+    const { token, data } = response.data
+    const user = data.user
+
+    setToken(token)
+    setUser(user)
+
+    localStorage.setItem('admin_token', token)
+    localStorage.setItem('admin_user', JSON.stringify(user))
   }
 
   const logout = () => {
