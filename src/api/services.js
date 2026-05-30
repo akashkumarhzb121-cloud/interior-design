@@ -43,3 +43,8 @@ export const consultationAPI = {
 export const authApi = {
   login: (credentials) => api.post('/auth/login', credentials),
 }
+
+export const paymentApi = {
+  createOrder: (data) => api.post('/payments/create-order', data),
+  verifyPayment: (data) => api.post('/payments/verify', data),
+};
