@@ -15,7 +15,12 @@ const timeSlots = [
 ];
 
 const projectTypes = [
-ak@gmail.com
+  { value: 'Residential',  label: 'Residential Design' },
+  { value: 'Commercial',   label: 'Commercial Design' },
+  { value: 'Office',       label: 'Office Design' },
+  { value: 'Hospitality',  label: 'Hospitality Design' },
+  { value: 'Retail',       label: 'Retail Design' },
+  { value: 'Other',        label: 'Other' },
 ];
 
 const budgetOptions = [
