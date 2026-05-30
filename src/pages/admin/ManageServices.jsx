@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
@@ -13,33 +13,33 @@ export default function ManageServices() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingService, setEditingService] = useState(null)
   const [form, setForm] = useState({ title: '', description: '' })
+  const imageRef = useRef(null)
+  const [imagePreview, setImagePreview] = useState(null)
 
   const loadServices = async () => {
     setLoading(true)
     try {
       const response = await servicesApi.getAll()
-      setServices(response.data || [])
+      setServices(response.data?.data || response.data || [])
     } catch (error) {
-      console.error('[v0] Error loading services:', error)
+      console.error('[Services] Load error:', error)
       toast.error('Unable to load services.')
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => {
-    loadServices()
-  }, [])
+  useEffect(() => { loadServices() }, [])
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this service?')) return
     setRemoving(id)
     try {
       await servicesApi.delete(id)
-      toast.success('Service removed successfully.')
+      toast.success('Service removed.')
       await loadServices()
     } catch (error) {
-      console.error('[v0] Error deleting service:', error)
+      console.error('[Services] Delete error:', error)
       toast.error('Failed to delete service.')
     } finally {
       setRemoving(null)
@@ -49,44 +49,67 @@ export default function ManageServices() {
   const openCreate = () => {
     setEditingService(null)
     setForm({ title: '', description: '' })
+    if (imageRef.current) imageRef.current.value = null
+    setImagePreview(null)
     setIsModalOpen(true)
   }
 
   const openEdit = (service) => {
     setEditingService(service)
     setForm({ title: service.title || '', description: service.description || '' })
+    setImagePreview(service.image?.url || null)
     setIsModalOpen(true)
+  }
+
+  const handleImageChange = (e) => {
+    const f = e.target.files?.[0]
+    if (!f) { setImagePreview(null); return }
+    if (!f.type.startsWith('image/')) { toast.error('Only images are allowed.'); return }
+    if (f.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB.'); return }
+    setImagePreview(URL.createObjectURL(f))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!form.title.trim()) { toast.error('Title is required.'); return }
+    if (!form.description.trim()) { toast.error('Description is required.'); return }
+
     try {
+      const data = new FormData()
+      data.append('title',       form.title.trim())
+      data.append('description', form.description.trim())
+      const file = imageRef.current?.files?.[0]
+      if (file) {
+        if (!file.type.startsWith('image/')) { toast.error('Only images are allowed.'); return }
+        if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB.'); return }
+        data.append('image', file)
+      }
+
       if (editingService) {
-        await servicesApi.update(editingService._id, { title: form.title, description: form.description })
-        toast.success('Service updated')
+        await servicesApi.update(editingService._id, data)
+        toast.success('Service updated.')
       } else {
-        await servicesApi.create({ title: form.title, description: form.description })
-        toast.success('Service created')
+        await servicesApi.create(data)
+        toast.success('Service created.')
       }
       setIsModalOpen(false)
+      setImagePreview(null)
       await loadServices()
     } catch (error) {
-      console.error('[v0] Error saving service:', error)
-      toast.error('Failed to save service')
+      console.error('[Services] Save error:', error)
+      toast.error(error?.response?.data?.message || 'Failed to save service.')
     }
   }
 
   return (
     <Section className="bg-background min-h-[calc(100vh-4rem)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeader title="Manage Services" description="Update and remove existing service offerings." />
+        <SectionHeader title="Manage Services" description="Add, edit, and remove service offerings." />
 
         <div className="mt-8 overflow-x-auto rounded-3xl border border-border bg-card">
           <div className="flex items-center justify-between p-6 border-b border-border">
-            <div className="text-sm text-muted-foreground">Service offerings</div>
-            <div>
-              <Button variant="gold" onClick={openCreate}>Add Service</Button>
-            </div>
+            <div className="text-sm text-muted-foreground">{services.length} service{services.length !== 1 ? 's' : ''}</div>
+            <Button variant="gold" onClick={openCreate}>Add Service</Button>
           </div>
           <table className="min-w-full divide-y divide-border">
             <thead className="bg-background/80 text-left text-sm uppercase tracking-[0.12em] text-muted-foreground">
@@ -98,14 +121,12 @@ export default function ManageServices() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr>
-                  <td colSpan="3" className="px-6 py-10 text-center text-muted-foreground">Loading services...</td>
-                </tr>
+                <tr><td colSpan="3" className="px-6 py-10 text-center text-muted-foreground">Loading services...</td></tr>
               ) : services.length > 0 ? (
                 services.map((service) => (
                   <tr key={service._id}>
                     <td className="px-6 py-4 text-foreground font-medium">{service.title}</td>
-                    <td className="px-6 py-4 text-muted-foreground">{service.description}</td>
+                    <td className="px-6 py-4 text-muted-foreground max-w-xs truncate">{service.description}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Button size="sm" onClick={() => openEdit(service)}>Edit</Button>
@@ -117,19 +138,27 @@ export default function ManageServices() {
                   </tr>
                 ))
               ) : (
-                <tr>
-                  <td colSpan="3" className="px-6 py-10 text-center text-muted-foreground">No services found.</td>
-                </tr>
+                <tr><td colSpan="3" className="px-6 py-10 text-center text-muted-foreground">No services found.</td></tr>
               )}
             </tbody>
           </table>
         </div>
+
         <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingService ? 'Edit Service' : 'Add Service'} size="md">
           <form onSubmit={handleSubmit} className="p-4 space-y-4">
-            <Input id="title" label="Title" value={form.title} onChange={(e) => setForm((s) => ({ ...s, title: e.target.value }))} required />
-            <Textarea id="description" label="Description" value={form.description} onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))} />
+            <Input id="title" label="Title *" value={form.title} onChange={(e) => setForm((s) => ({ ...s, title: e.target.value }))} required />
+            <Textarea id="description" label="Description *" value={form.description} onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))} required />
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">Image (optional)</label>
+              <input ref={imageRef} type="file" accept="image/*" className="w-full" onChange={handleImageChange} />
+              {imagePreview && (
+                <div className="mt-3 w-full h-32 overflow-hidden rounded-lg bg-muted">
+                  <img src={imagePreview} alt="preview" className="object-cover h-full w-full" />
+                </div>
+              )}
+            </div>
             <div className="flex items-center justify-end gap-2">
-              <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+              <Button variant="ghost" type="button" onClick={() => setIsModalOpen(false)}>Cancel</Button>
               <Button type="submit" variant="gold">{editingService ? 'Update' : 'Create'}</Button>
             </div>
           </form>

@@ -14,8 +14,6 @@ const timeSlots = [
   '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM',
 ];
 
-// ✅ FIX 1: Values match the backend enum exactly (Title Case)
-//    and field is named 'projectType' to match backend expectation
 const projectTypes = [
   { value: 'Residential',  label: 'Residential Design' },
   { value: 'Commercial',   label: 'Commercial Design' },
@@ -25,14 +23,13 @@ const projectTypes = [
   { value: 'Other',        label: 'Other' },
 ];
 
-// ✅ FIX 2: Budget options added (accepted by backend)
 const budgetOptions = [
-  { value: 'Under 10k',   label: 'Under 10k' },
+  { value: 'Under 10k',  label: 'Under 10k' },
   { value: '10k–25k',    label: '10k – 25k' },
   { value: '25k–50k',    label: '25k – 50k' },
   { value: '50k–100k',   label: '50k – 100k' },
-  { value: '100k+',       label: '100k+' },
-  { value: 'Not sure',     label: 'Not sure' },
+  { value: '100k+',      label: '100k+' },
+  { value: 'Not sure',   label: 'Not sure' },
 ];
 
 export default function BookingPage() {
@@ -50,7 +47,6 @@ export default function BookingPage() {
       reset();
       toast.success('Consultation booked successfully!');
     } catch (error) {
-      // ✅ FIX 3: Show actual server error message to help debug
       const msg =
         error?.response?.data?.message ||
         'Failed to book consultation. Please try again.';
@@ -129,7 +125,6 @@ export default function BookingPage() {
                   error={errors.phone?.message}
                 />
 
-                {/* ✅ FIX 1: renamed from 'serviceType' → 'projectType', values are Title Case */}
                 <Select
                   label="Project Type"
                   options={projectTypes}
@@ -137,7 +132,6 @@ export default function BookingPage() {
                   error={errors.projectType?.message}
                 />
 
-                {/* ✅ FIX 2: Budget field added */}
                 <Select
                   label="Budget Range"
                   options={budgetOptions}
