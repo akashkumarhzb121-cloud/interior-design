@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { ServiceCardSkeleton } from '@/components/ui/Skeleton'
 import { servicesApi } from '@/api/services'
 import { cn } from '@/lib/utils'
+import PayButton from '@/components/PayButton'  // FIX: import PayButton
 
 const iconMap = { home: Home, building: Building2, paintbrush: Paintbrush, sofa: Sofa, lightbulb: Lightbulb, hardhat: HardHat }
 
@@ -25,6 +26,37 @@ const process = [
   { step: '03', title: 'Design Refinement', description: 'We refine the designs based on your feedback.' },
   { step: '04', title: 'Implementation', description: 'Our project managers oversee the execution.' },
   { step: '05', title: 'Styling & Handover', description: 'We add the finishing touches and hand over your beautifully transformed space.' },
+]
+
+// FIX: pricing plans now include numeric `amount` for Razorpay
+const pricingPlans = [
+  {
+    title: 'Consultation',
+    price: '₹1,000',
+    amount: 1000,
+    period: 'per session',
+    description: 'Perfect for quick guidance',
+    features: ['2-hour session', 'Design recommendations', 'Shopping list', 'Color palette', 'Layout suggestions'],
+    highlighted: false,
+  },
+  {
+    title: 'Full Service',
+    price: '₹600',
+    amount: 600,
+    period: 'per sq. ft.',
+    description: 'Complete design and execution',
+    features: ['Complete design concept', '3D visualizations', 'Material procurement', 'Project management', 'Installation & styling'],
+    highlighted: true,
+  },
+  {
+    title: 'E-Design',
+    price: '₹15,000',
+    amount: 15000,
+    period: 'per room',
+    description: 'Remote design services',
+    features: ['Online consultation', 'Design board', 'Furniture plan', 'Shopping links', 'Email support'],
+    highlighted: false,
+  },
 ]
 
 export default function ServicesPage() {
@@ -90,22 +122,46 @@ export default function ServicesPage() {
         </div>
       </Section>
 
+      {/* FIX: Pricing section now uses PayButton instead of <Link to="/booking"> */}
       <Section className="bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionHeader badge="Investment" title="Flexible Pricing Options" description="We offer transparent pricing tailored to your project scope." centered />
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[
-              { title: 'Consultation', price: '₹1,000', period: 'per session', description: 'Perfect for quick guidance', features: ['2-hour session', 'Design recommendations', 'Shopping list', 'Color palette', 'Layout suggestions'], highlighted: false },
-              { title: 'Full Service', price: '₹600', period: 'per sq. ft.', description: 'Complete design and execution', features: ['Complete design concept', '3D visualizations', 'Material procurement', 'Project management', 'Installation & styling'], highlighted: true },
-              { title: 'E-Design', price: '₹15,000', period: 'per room', description: 'Remote design services', features: ['Online consultation', 'Design board', 'Furniture plan', 'Shopping links', 'Email support'], highlighted: false },
-            ].map((plan, index) => (
-              <motion.div key={plan.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className={cn('relative p-8 rounded-2xl border', plan.highlighted ? 'bg-charcoal text-white border-gold' : 'bg-card border-border')}>
-                {plan.highlighted && <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gold text-charcoal text-xs font-semibold rounded-full">Most Popular</span>}
+            {pricingPlans.map((plan, index) => (
+              <motion.div
+                key={plan.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className={cn('relative p-8 rounded-2xl border', plan.highlighted ? 'bg-charcoal text-white border-gold' : 'bg-card border-border')}
+              >
+                {plan.highlighted && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-gold text-charcoal text-xs font-semibold rounded-full">Most Popular</span>
+                )}
                 <h3 className="text-xl font-serif font-semibold">{plan.title}</h3>
-                <div className="mt-4"><span className="text-4xl font-bold">{plan.price}</span><span className={plan.highlighted ? 'text-white/70' : 'text-muted-foreground'}> {plan.period}</span></div>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold">{plan.price}</span>
+                  <span className={plan.highlighted ? 'text-white/70' : 'text-muted-foreground'}> {plan.period}</span>
+                </div>
                 <p className={cn('mt-3 text-sm', plan.highlighted ? 'text-white/70' : 'text-muted-foreground')}>{plan.description}</p>
-                <ul className="mt-6 space-y-3">{plan.features.map((feature) => <li key={feature} className="flex items-center gap-2 text-sm"><Check className="w-5 h-5 flex-shrink-0 text-gold" />{feature}</li>)}</ul>
-                <Link to="/booking" className="block mt-8"><Button variant={plan.highlighted ? 'gold' : 'outline'} className="w-full">Get Started<ArrowRight className="w-4 h-4" /></Button></Link>
+                <ul className="mt-6 space-y-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-center gap-2 text-sm">
+                      <Check className="w-5 h-5 flex-shrink-0 text-gold" />{feature}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* FIX: replaced <Link to="/booking"> with PayButton */}
+                <div className="mt-8">
+                  <PayButton
+                    serviceName={plan.title}
+                    amount={plan.amount}
+                    priceDisplay={plan.price}
+                    variant={plan.highlighted ? 'gold' : 'outline'}
+                  />
+                </div>
               </motion.div>
             ))}
           </div>
