@@ -25,6 +25,7 @@ export default function ManageProjects() {
     setLoading(true)
     try {
       const response = await projectsApi.getAll()
+      // FIX: backend wraps array inside response.data.data (sendResponse util)
       setProjects(response.data?.data || response.data || [])
     } catch (error) {
       console.error('[Projects] Load error:', error)
@@ -81,7 +82,8 @@ export default function ManageProjects() {
   const handleImageChange = (e) => {
     const files = e.target.files
     if (!files || !files.length) { setImagePreviews([]); return }
-    const previews = Array.from(files).slice(0, 10).map((f) => ({
+    // FIX: removed slice(0, 10) cap — now allows unlimited images
+    const previews = Array.from(files).map((f) => ({
       src: URL.createObjectURL(f), name: f.name,
     }))
     setImagePreviews(previews)
@@ -105,8 +107,8 @@ export default function ManageProjects() {
       const files = imagesRef.current?.files
       if (files && files.length) {
         for (const file of Array.from(files)) {
+          // FIX: removed 5MB per-file size check — backend now allows 150MB
           if (!file.type.startsWith('image/')) { toast.error('Only image files are allowed.'); return }
-          if (file.size > 5 * 1024 * 1024)    { toast.error('Each image must be under 5MB.'); return }
           data.append('images', file)
         }
       }
@@ -200,7 +202,8 @@ export default function ManageProjects() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Images (up to 10)</label>
+              {/* FIX: label updated to say "unlimited" */}
+              <label className="block text-sm font-medium text-foreground mb-2">Images (unlimited)</label>
               <input ref={imagesRef} type="file" accept="image/*" multiple className="w-full" onChange={handleImageChange} />
               {imagePreviews.length > 0 && (
                 <div className="mt-3 grid grid-cols-4 gap-2">
