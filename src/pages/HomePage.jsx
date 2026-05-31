@@ -45,9 +45,16 @@ export default function HomePage() {
           servicesApi.getAll(),
           testimonialsApi.getAll(),
         ])
-        setProjects(projectsRes.data?.slice(0, 6) || [])
-        setServices(servicesRes.data?.slice(0, 4) || [])
-        setTestimonials(testimonialsRes.data || [])
+        // FIX: backend sendResponse wraps data as { success, data: [...] }
+        // axios response is response.data = { success, data: [...] }
+        // so the array is at response.data.data
+        const projectsArr     = projectsRes.data?.data     || projectsRes.data     || []
+        const servicesArr     = servicesRes.data?.data      || servicesRes.data      || []
+        const testimonialsArr = testimonialsRes.data?.data  || testimonialsRes.data  || []
+
+        setProjects(Array.isArray(projectsArr) ? projectsArr.slice(0, 6) : [])
+        setServices(Array.isArray(servicesArr) ? servicesArr.slice(0, 4) : [])
+        setTestimonials(Array.isArray(testimonialsArr) ? testimonialsArr : [])
       } catch (error) {
         console.log('[v0] Error fetching data:', error)
       } finally {
@@ -300,6 +307,8 @@ export default function HomePage() {
                 <TestimonialCardSkeleton key={i} />
               ))}
             </div>
+          ) : testimonials.length === 0 ? (
+            <p className="text-center text-white/50 py-12">No testimonials yet.</p>
           ) : (
             <Swiper
               modules={[Autoplay, Pagination]}
@@ -374,7 +383,8 @@ function ProjectCard({ project, index }) {
       <Link to={projectId ? `/projects/${projectId}` : '/projects'}>
         <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
           <img
-            src={project.images?.[0] || 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80'}
+            // FIX: project images are objects {url, publicId}, not plain strings
+            src={project.images?.[0]?.url || project.images?.[0] || 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80'}
             alt={project.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
@@ -449,27 +459,27 @@ function TestimonialCard({ testimonial }) {
           />
         ))}
       </div>
-      <p className="text-white/80 leading-relaxed">{testimonial.content}</p>
+      {/* FIX: DB field is `review`, not `content` */}
+      <p className="text-white/80 leading-relaxed">{testimonial.review}</p>
       <div className="mt-6 flex items-center gap-4">
         <div className="w-12 h-12 rounded-full overflow-hidden bg-gold/20">
-          {testimonial.image ? (
+          {/* FIX: image is an object {url, publicId}, not a plain string */}
+          {testimonial.image?.url ? (
             <img
-              src={testimonial.image}
+              src={testimonial.image.url}
               alt={testimonial.name}
               className="w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gold font-semibold">
-              {testimonial.name.charAt(0)}
+              {testimonial.name?.charAt(0)}
             </div>
           )}
         </div>
         <div>
           <div className="font-semibold text-white">{testimonial.name}</div>
-          <div className="text-sm text-white/60">
-            {testimonial.designation}
-            {testimonial.company && `, ${testimonial.company}`}
-          </div>
+          {/* FIX: DB field is `profession`, not `designation` or `company` */}
+          <div className="text-sm text-white/60">{testimonial.profession}</div>
         </div>
       </div>
     </div>
