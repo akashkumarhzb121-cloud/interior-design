@@ -45,6 +45,6 @@ export const authApi = {
 }
 
 export const paymentApi = {
-  createOrder: (data) => api.post('/payments/create-order', data),
+  createOrder:   (data) => api.post('/payments/create-order', data),
   verifyPayment: (data) => api.post('/payments/verify', data),
-};
+}
