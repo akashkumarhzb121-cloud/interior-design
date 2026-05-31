@@ -11,12 +11,21 @@ import { cn } from '@/lib/utils'
 
 const categories = ['All', 'Residential', 'Commercial', 'Hospitality', 'Office', 'Retail']
 
+// Helper: safely extract URL string from image entry
+// Backend stores images as { url, publicId } objects, not plain strings
+function getImageUrl(img, fallback = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80') {
+  if (!img) return fallback
+  if (typeof img === 'string') return img   // plain string (legacy)
+  if (img.url) return img.url               // object { url, publicId }
+  return fallback
+}
+
 export default function ProjectsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [projects, setProjects] = useState([])
   const [filteredProjects, setFilteredProjects] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)           // ✅ FIX: added error state
+  const [error, setError] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState(searchParams.get('category') || 'All')
   const [showFilters, setShowFilters] = useState(false)
@@ -26,15 +35,15 @@ export default function ProjectsPage() {
       try {
         setError(null)
         const response = await projectsApi.getAll()
-
-        // ✅ FIX: backend wraps response as { success, data: [...] }
-        // so response.data is { success, data } and response.data.data is the array
+        // FIX: backend wraps data as { success, data: [...] }
+        // axios gives response.data = { success, data: [...] }
+        // so the array lives at response.data.data
         const list = response.data?.data || response.data || []
         setProjects(Array.isArray(list) ? list : [])
         setFilteredProjects(Array.isArray(list) ? list : [])
       } catch (error) {
         console.error('[ProjectsPage] Error fetching projects:', error)
-        setError('Failed to load projects. Please try again.')  // ✅ FIX: set error state
+        setError('Failed to load projects. Please try again.')
       } finally {
         setLoading(false)
       }
@@ -72,6 +81,7 @@ export default function ProjectsPage() {
 
   return (
     <>
+      {/* Hero */}
       <section className="relative min-h-[60vh] sm:min-h-[64vh] md:min-h-[70vh] lg:min-h-[75vh] overflow-hidden bg-charcoal">
         <div className="absolute inset-0 opacity-20">
           <img
@@ -95,6 +105,7 @@ export default function ProjectsPage() {
         </div>
       </section>
 
+      {/* Filter bar */}
       <Section className="bg-background py-8 lg:sticky lg:top-20 z-20 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
@@ -164,10 +175,9 @@ export default function ProjectsPage() {
         </div>
       </Section>
 
+      {/* Projects grid */}
       <Section className="bg-background pt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-          {/* ✅ FIX: Show error state instead of blank page */}
           {error ? (
             <div className="text-center py-16">
               <div className="w-20 h-20 mx-auto bg-destructive/10 rounded-full flex items-center justify-center mb-4">
@@ -175,11 +185,7 @@ export default function ProjectsPage() {
               </div>
               <h3 className="text-xl font-semibold">Something went wrong</h3>
               <p className="text-muted-foreground mt-2">{error}</p>
-              <Button
-                variant="outline"
-                className="mt-4"
-                onClick={() => window.location.reload()}
-              >
+              <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
                 Try Again
               </Button>
             </div>
@@ -189,7 +195,7 @@ export default function ProjectsPage() {
                 <p className="text-muted-foreground">
                   Showing{' '}
                   <span className="text-foreground font-medium">{filteredProjects.length}</span>{' '}
-                  projects
+                  project{filteredProjects.length !== 1 ? 's' : ''}
                   {activeCategory !== 'All' && (
                     <> in <span className="text-gold">{activeCategory}</span></>
                   )}
@@ -233,6 +239,7 @@ export default function ProjectsPage() {
         </div>
       </Section>
 
+      {/* CTA */}
       <Section className="bg-sand">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <SectionHeader
@@ -255,6 +262,9 @@ export default function ProjectsPage() {
 function ProjectCard({ project, index }) {
   const projectId = project._id || project.id
 
+  // FIX: images are stored as objects {url, publicId} not plain strings
+  const imageUrl = getImageUrl(project.images?.[0])
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -266,10 +276,7 @@ function ProjectCard({ project, index }) {
       <Link to={projectId ? `/projects/${projectId}` : '/projects'}>
         <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
           <img
-            src={
-              project.images?.[0] ||
-              'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80'
-            }
+            src={imageUrl}
             alt={project.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
@@ -281,9 +288,11 @@ function ProjectCard({ project, index }) {
             <h3 className="text-xl font-serif font-semibold text-white group-hover:text-gold transition-colors">
               {project.title}
             </h3>
-            <p className="mt-1 text-white/80 text-sm flex items-center gap-1">
-              <MapPin className="w-3 h-3" />{project.location}
-            </p>
+            {project.location && (
+              <p className="mt-1 text-white/80 text-sm flex items-center gap-1">
+                <MapPin className="w-3 h-3" />{project.location}
+              </p>
+            )}
           </div>
           <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
             <div className="w-10 h-10 bg-gold rounded-full flex items-center justify-center">
