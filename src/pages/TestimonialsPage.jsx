@@ -1,104 +1,96 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Star, ArrowRight } from 'lucide-react'
-import { Section, SectionHeader } from '@/components/ui/Section'
-import { Button } from '@/components/ui/Button'
-import { TestimonialCardSkeleton } from '@/components/ui/Skeleton'
-import { testimonialsApi } from '@/api/services'
-import { cn } from '@/lib/utils'
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-export default function TestimonialsPage() {
-  const [testimonials, setTestimonials] = useState([])
-  const [loading, setLoading] = useState(true)
+const TestimonialsPage = () => {
+  const [testimonials, setTestimonials] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({ name: '', profession: '', review: '', rating: 5 });
+  const [submitMessage, setSubmitMessage] = useState('');
 
   useEffect(() => {
-    const fetchTestimonials = async () => {
-      try {
-        const response = await testimonialsApi.getAll()
-        setTestimonials(response.data || [])
-      } catch (error) {
-        console.log('[v0] Error fetching testimonials:', error)
-      } finally {
-        setLoading(false)
-      }
+    fetchTestimonials();
+  }, []);
+
+  const fetchTestimonials = async () => {
+    try {
+      // Fetch ONLY approved testimonials for the public page
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/testimonials/approved`);
+      setTestimonials(res.data.data || []);
+    } catch (error) {
+      console.error("Error fetching testimonials", error);
+    } finally {
+      setLoading(false);
     }
-    fetchTestimonials()
-  }, [])
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/testimonials`, formData);
+      setSubmitMessage(res.data.message || "Review submitted! Awaiting admin approval.");
+      setFormData({ name: '', profession: '', review: '', rating: 5 });
+    } catch (error) {
+      setSubmitMessage("Error submitting review. Please try again.");
+    }
+  };
 
   return (
-    <>
-      <section className="relative py-24 md:py-32 bg-charcoal overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          <img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=1920&q=80" alt="" className="w-full h-full object-cover" />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl">
-            <span className="inline-block px-4 py-2 bg-gold/20 text-gold text-sm font-medium rounded-full mb-6">Client Testimonials</span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white">Trusted by Homeowners & Businesses</h1>
-            <p className="mt-6 text-lg text-white/70 leading-relaxed">Read what our clients have to say about our luxury interior design services.</p>
-          </motion.div>
-        </div>
-      </section>
-
-      <Section className="bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <SectionHeader badge="Feedback" title="Real Stories From Real Clients" description="Our clients trust us to transform their spaces with thoughtful design and exceptional service." centered />
-
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <TestimonialCardSkeleton key={i} />
-              ))}
+    <div className="container mx-auto px-4 py-12">
+      <h1 className="text-4xl font-bold text-center mb-10">Client Testimonials</h1>
+      
+      {/* Testimonials Display Section */}
+      {loading ? (
+        <p className="text-center">Loading reviews...</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+          {testimonials.map(t => (
+            <div key={t._id} className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+              <div className="flex items-center mb-4">
+                <img src={t.image?.url || 'https://via.placeholder.com/50'} alt={t.name} className="w-12 h-12 rounded-full mr-4" />
+                <div>
+                  <h3 className="font-bold">{t.name}</h3>
+                  <p className="text-sm text-gray-500">{t.profession}</p>
+                </div>
+              </div>
+              <p className="text-gray-700 italic">"{t.review}"</p>
+              <div className="mt-4 text-yellow-500">
+                {'★'.repeat(t.rating)}{'☆'.repeat(5 - t.rating)}
+              </div>
             </div>
-          ) : testimonials.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {testimonials.map((testimonial, index) => (
-                <TestimonialCard key={testimonial._id || index} testimonial={testimonial} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20">
-              <h2 className="text-2xl font-semibold">No testimonials available yet.</h2>
-              <p className="text-muted-foreground mt-2">Check back soon to see our latest client stories.</p>
-            </div>
-          )}
+          ))}
         </div>
-      </Section>
+      )}
 
-      <Section className="bg-sand">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <SectionHeader badge="Get Started" title="Want to Experience Modplint Interiors Yourself?" description="Book a consultation and let us create a luxurious space tailored to your needs." centered />
-          <Link to="/booking">
-            <Button variant="gold" size="xl" className="mt-6">
-              Book Consultation
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-          </Link>
-        </div>
-      </Section>
-    </>
-  )
-}
-
-function TestimonialCard({ testimonial }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="p-8 rounded-3xl bg-card border border-border shadow-sm">
-      <div className="flex items-center gap-4 mb-6">
-        <div className="w-14 h-14 rounded-full bg-gold/10 flex items-center justify-center text-gold text-xl font-semibold">
-          {testimonial.name?.charAt(0) || 'L'}
-        </div>
-        <div>
-          <p className="font-semibold text-foreground">{testimonial.name || 'Client'}</p>
-          <p className="text-sm text-muted-foreground">{testimonial.designation || testimonial.company || 'Homeowner'}</p>
-        </div>
+      {/* Submit Review Form */}
+      <div className="max-w-2xl mx-auto bg-gray-50 p-8 rounded-lg shadow-sm border border-gray-200">
+        <h2 className="text-2xl font-bold mb-6 text-center">Share Your Experience</h2>
+        {submitMessage && <div className="mb-4 p-3 bg-green-100 text-green-700 rounded text-center">{submitMessage}</div>}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input type="text" placeholder="Your Name" required className="w-full p-3 border rounded"
+              value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+            <input type="text" placeholder="Profession / Designation" required className="w-full p-3 border rounded"
+              value={formData.profession} onChange={e => setFormData({...formData, profession: e.target.value})} />
+          </div>
+          <textarea placeholder="Write your review here..." required className="w-full p-3 border rounded h-32"
+            value={formData.review} onChange={e => setFormData({...formData, review: e.target.value})}></textarea>
+          <div>
+            <label className="block mb-2 text-gray-700">Rating</label>
+            <select className="w-full p-3 border rounded" value={formData.rating} onChange={e => setFormData({...formData, rating: Number(e.target.value)})}>
+              <option value="5">5 - Excellent</option>
+              <option value="4">4 - Very Good</option>
+              <option value="3">3 - Average</option>
+              <option value="2">2 - Poor</option>
+              <option value="1">1 - Terrible</option>
+            </select>
+          </div>
+          <button type="submit" className="w-full bg-black text-white p-3 rounded font-bold hover:bg-gray-800 transition">
+            Submit Review
+          </button>
+        </form>
       </div>
-      <div className="flex gap-1 mb-4 text-gold">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <Star key={index} className={cn('w-5 h-5', index < (testimonial.rating || 5) ? 'text-gold' : 'text-white/20')} />
-        ))}
-      </div>
-      <p className="text-muted-foreground leading-relaxed">{testimonial.content || testimonial.message || 'A beautifully designed space with exceptional attention to detail.'}</p>
-    </motion.div>
-  )
-}
+    </div>
+  );
+};
+
+export default TestimonialsPage;
