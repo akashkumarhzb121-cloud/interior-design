@@ -20,6 +20,7 @@ export default function ManageTestimonials() {
     setLoading(true)
     try {
       const response = await testimonialsApi.getAll()
+      // FIX: backend wraps array inside response.data.data (sendResponse util)
       setTestimonials(response.data?.data || response.data || [])
     } catch (error) {
       console.error('[Testimonials] Load error:', error)
@@ -62,6 +63,7 @@ export default function ManageTestimonials() {
       review:     t.review     || '',
       rating:     t.rating     || 5,
     })
+    // FIX: image is an object {url, publicId}, not a plain string
     setImagePreview(t.image?.url || null)
     setIsModalOpen(true)
   }
@@ -70,7 +72,6 @@ export default function ManageTestimonials() {
     const f = e.target.files?.[0]
     if (!f) { setImagePreview(null); return }
     if (!f.type.startsWith('image/')) { toast.error('Only images are allowed.'); return }
-    if (f.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB.'); return }
     setImagePreview(URL.createObjectURL(f))
   }
 
@@ -85,12 +86,11 @@ export default function ManageTestimonials() {
       data.append('profession', form.profession.trim())
       data.append('review',     form.review.trim())
       data.append('rating',     form.rating)
-      data.append('isApproved', 'true')
+      data.append('isApproved', 'true')   // admin-created testimonials are auto-approved
 
       const file = imageRef.current?.files?.[0]
       if (file) {
         if (!file.type.startsWith('image/')) { toast.error('Only images are allowed.'); return }
-        if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB.'); return }
         data.append('image', file)
       }
 
@@ -127,12 +127,13 @@ export default function ManageTestimonials() {
                 <th className="px-6 py-4">Profession</th>
                 <th className="px-6 py-4">Review</th>
                 <th className="px-6 py-4">Rating</th>
+                <th className="px-6 py-4">Approved</th>
                 <th className="px-6 py-4">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr><td colSpan="5" className="px-6 py-10 text-center text-muted-foreground">Loading testimonials...</td></tr>
+                <tr><td colSpan="6" className="px-6 py-10 text-center text-muted-foreground">Loading testimonials...</td></tr>
               ) : testimonials.length > 0 ? (
                 testimonials.map((t) => (
                   <tr key={t._id}>
@@ -140,6 +141,11 @@ export default function ManageTestimonials() {
                     <td className="px-6 py-4 text-muted-foreground">{t.profession || '—'}</td>
                     <td className="px-6 py-4 text-muted-foreground max-w-xs truncate">{t.review}</td>
                     <td className="px-6 py-4 text-muted-foreground">{t.rating} ★</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${t.isApproved ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {t.isApproved ? 'Approved' : 'Pending'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Button size="sm" onClick={() => openEdit(t)}>Edit</Button>
@@ -151,7 +157,7 @@ export default function ManageTestimonials() {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan="5" className="px-6 py-10 text-center text-muted-foreground">No testimonials found.</td></tr>
+                <tr><td colSpan="6" className="px-6 py-10 text-center text-muted-foreground">No testimonials found.</td></tr>
               )}
             </tbody>
           </table>
