@@ -16,10 +16,22 @@ export const servicesApi = {
 }
 
 export const testimonialsApi = {
-  getAll:  ()         => api.get('/testimonials'),
-  create:  (data)     => api.post('/testimonials', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  update:  (id, data) => api.put(`/testimonials/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  delete:  (id)       => api.delete(`/testimonials/${id}`),
+  getAll: () => api.get('/testimonials'),
+
+  // Used by the PUBLIC submit form on TestimonialsPage
+  // → creates with isApproved:false, admin must approve before it shows
+  create: (data) =>
+    api.post('/testimonials', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+
+  // FIX: Used by ManageTestimonials admin page
+  // → hits /testimonials/admin-create, creates with isApproved:true (live immediately)
+  createByAdmin: (data) =>
+    api.post('/testimonials/admin-create', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+
+  update: (id, data) =>
+    api.put(`/testimonials/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+
+  delete: (id) => api.delete(`/testimonials/${id}`),
 }
 
 export const contactApi = {
