@@ -204,7 +204,26 @@ export default function ManageProjects() {
             <div>
               {/* FIX: label updated to say "unlimited" */}
               <label className="block text-sm font-medium text-foreground mb-2">Images (unlimited)</label>
-              <input ref={imagesRef} type="file" accept="image/*" multiple className="w-full" onChange={handleImageChange} />
+<label className="block cursor-pointer">
+  <div className="border-2 border-dashed border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-6 text-center hover:border-yellow-600 transition-all">
+    <div className="font-semibold text-yellow-600 text-lg">
+      📸 Click Here To Upload Images
+    </div>
+
+    <div className="text-sm text-muted-foreground">
+      Unlimited Images Supported
+    </div>
+  </div>
+
+  <input
+    ref={imagesRef}
+    type="file"
+    multiple
+    accept="image/*"
+    className="hidden"
+    onChange={handleImageChange}
+  />
+</label>
               {imagePreviews.length > 0 && (
                 <div className="mt-3 grid grid-cols-4 gap-2">
                   {imagePreviews.map((p, i) => (
