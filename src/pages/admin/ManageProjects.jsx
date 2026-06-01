@@ -204,14 +204,7 @@ export default function ManageProjects() {
             <div>
               {/* FIX: label updated to say "unlimited" */}
               <label className="block text-sm font-medium text-foreground mb-2">Images (unlimited)</label>
-              <input ref={imagesRef} type="file" accept="image/*" multiple className="block w-full text-sm text-gray-700 
-  file:mr-4 file:py-2.5 file:px-4 
-  file:rounded-md file:border-0 
-  file:text-sm file:font-bold 
-  file:bg-amber-500 file:text-white 
-  hover:file:bg-amber-600 file:cursor-pointer 
-  border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 p-3 
-  cursor-pointer hover:border-amber-500 transition-colors" onChange={handleImageChange} />
+              <input ref={imagesRef} type="file" accept="image/*" multiple className="w-full" onChange={handleImageChange} />
               {imagePreviews.length > 0 && (
                 <div className="mt-3 grid grid-cols-4 gap-2">
                   {imagePreviews.map((p, i) => (
