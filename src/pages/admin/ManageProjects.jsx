@@ -100,7 +100,7 @@ export default function ManageProjects() {
       data.append('category',    form.category)
       data.append('location',    form.location)
       data.append('description', form.description.trim())
-      data.append('featured',    form.featured)
+      data.append('featured', form.featured ? 'true' : 'false')
       if (form.budget)         data.append('budget',         form.budget)
       if (form.completionDate) data.append('completionDate', form.completionDate)
 
