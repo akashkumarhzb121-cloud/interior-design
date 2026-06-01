@@ -150,7 +150,29 @@ export default function ManageServices() {
             <Textarea id="description" label="Description *" value={form.description} onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))} required />
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Image (optional)</label>
-<input ref={imageRef} type="file" accept="image/*" className="w-full" onChange={handleImageChange} />
+<label className="block cursor-pointer">
+  <div className="border-2 border-dashed border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-6 text-center hover:border-yellow-600 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-all duration-200">
+    
+    <div className="text-xl mb-2">📸</div>
+
+    <div className="font-semibold text-yellow-700 dark:text-yellow-400">
+      Click Here To Upload Service Image
+    </div>
+
+    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+      JPG, PNG, WEBP Supported
+    </div>
+
+  </div>
+
+  <input
+    ref={imageRef}
+    type="file"
+    accept="image/*"
+    className="hidden"
+    onChange={handleImageChange}
+  />
+</label>
               {imagePreview && (
                 <div className="mt-3 w-full h-32 overflow-hidden rounded-lg bg-muted">
                   <img src={imagePreview} alt="preview" className="object-cover h-full w-full" />
