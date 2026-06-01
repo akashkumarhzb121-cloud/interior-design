@@ -132,16 +132,27 @@ function TestimonialModal({ testimonial, onClose, onSaved }) {
                 <img src={imgPreview} alt="preview" className="w-full h-full object-cover" />
               </div>
             )}
-            <input
-              ref={imageRef}
-              type="file"
-              accept="image/*"
-              className="w-full text-sm"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) setImgPreview(URL.createObjectURL(f))
-              }}
-            />
+<label className="block cursor-pointer">
+  <div className="border-2 border-dashed border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl p-5 text-center hover:border-yellow-600 transition-all">
+    <div className="font-semibold text-yellow-600">
+      📸 Click Here To Upload Image
+    </div>
+    <div className="text-sm text-muted-foreground">
+      JPG, PNG, WEBP Supported
+    </div>
+  </div>
+
+  <input
+    ref={imageRef}
+    type="file"
+    accept="image/*"
+    className="hidden"
+    onChange={(e) => {
+      const f = e.target.files?.[0]
+      if (f) setImgPreview(URL.createObjectURL(f))
+    }}
+  />
+</label>
           </div>
         </div>
 
