@@ -1,42 +1,43 @@
 import api from './axios'
 
+// ─── IMPORTANT ──────────────────────────────────────────────────────────────
+// When sending FormData with axios, do NOT manually set Content-Type.
+// Axios auto-sets 'multipart/form-data; boundary=...' with the correct boundary.
+// Manually setting it strips the boundary and breaks the request (multer returns 400).
+// ────────────────────────────────────────────────────────────────────────────
+
 export const projectsApi = {
   getAll:  ()         => api.get('/projects'),
   getById: (id)       => api.get(`/projects/${id}`),
-  create:  (data)     => api.post('/projects', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  update:  (id, data) => api.put(`/projects/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create:  (data)     => api.post('/projects', data),   // FormData — no Content-Type header
+  update:  (id, data) => api.put(`/projects/${id}`, data),
   delete:  (id)       => api.delete(`/projects/${id}`),
 }
 
 export const servicesApi = {
   getAll:  ()         => api.get('/services'),
-  create:  (data)     => api.post('/services', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  update:  (id, data) => api.put(`/services/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  create:  (data)     => api.post('/services', data),
+  update:  (id, data) => api.put(`/services/${id}`, data),
   delete:  (id)       => api.delete(`/services/${id}`),
 }
 
 export const testimonialsApi = {
   getAll: () => api.get('/testimonials'),
 
-  // Used by the PUBLIC submit form on TestimonialsPage
-  // → creates with isApproved:false, admin must approve before it shows
-  create: (data) =>
-    api.post('/testimonials', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  // Public submit — isApproved:false, pending admin review
+  create: (data) => api.post('/testimonials', data),
 
-  // FIX: Used by ManageTestimonials admin page
-  // → hits /testimonials/admin-create, creates with isApproved:true (live immediately)
-  createByAdmin: (data) =>
-    api.post('/testimonials/admin-create', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  // Admin create — isApproved:true, published immediately
+  createByAdmin: (data) => api.post('/testimonials/admin-create', data),
 
-  update: (id, data) =>
-    api.put(`/testimonials/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
-
-  delete: (id) => api.delete(`/testimonials/${id}`),
+  update: (id, data) => api.put(`/testimonials/${id}`, data),
+  delete: (id)       => api.delete(`/testimonials/${id}`),
 }
 
 export const contactApi = {
   submit:       (data)     => api.post('/contact', data),
   getAll:       ()         => api.get('/contact'),
+  getById:      (id)       => api.get(`/contact/${id}`),
   updateStatus: (id, data) => api.patch(`/contact/${id}/status`, data),
   delete:       (id)       => api.delete(`/contact/${id}`),
 }
