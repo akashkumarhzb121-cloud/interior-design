@@ -22,20 +22,28 @@ const heroImages = [
 
 const stats = [
   { icon: HomeIcon, value: '150+', label: 'Projects Completed' },
-  { icon: Users, value: '100+', label: 'Happy Clients' },
-  { icon: Award, value: '5+', label: 'Design Awards' },
-  { icon: MapPin, value: '20+', label: 'Locations in Mumbai' },
+  { icon: Users,    value: '100+', label: 'Happy Clients' },
+  { icon: Award,    value: '5+',   label: 'Design Awards' },
+  { icon: MapPin,   value: '20+',  label: 'Locations in Mumbai' },
+]
+
+// Fallback images per service index when no image is uploaded yet
+const FALLBACK_SERVICE_IMAGES = [
+  'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
+  'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&q=80',
+  'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80',
+  'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=800&q=80',
 ]
 
 export default function HomePage() {
-  const [projects, setProjects] = useState([])
-  const [services, setServices] = useState([])
+  const [projects,     setProjects]     = useState([])
+  const [services,     setServices]     = useState([])
   const [testimonials, setTestimonials] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading,      setLoading]      = useState(true)
 
   const { scrollYProgress } = useScroll()
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
-  const heroScale = useTransform(scrollYProgress, [0, 0.2], [1, 1.1])
+  const heroScale   = useTransform(scrollYProgress, [0, 0.2], [1, 1.1])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,18 +53,15 @@ export default function HomePage() {
           servicesApi.getAll(),
           testimonialsApi.getAll(),
         ])
-        // FIX: backend sendResponse wraps data as { success, data: [...] }
-        // axios response is response.data = { success, data: [...] }
-        // so the array is at response.data.data
         const projectsArr     = projectsRes.data?.data     || projectsRes.data     || []
         const servicesArr     = servicesRes.data?.data      || servicesRes.data      || []
         const testimonialsArr = testimonialsRes.data?.data  || testimonialsRes.data  || []
 
-        setProjects(Array.isArray(projectsArr) ? projectsArr.slice(0, 6) : [])
-        setServices(Array.isArray(servicesArr) ? servicesArr.slice(0, 4) : [])
-        setTestimonials(Array.isArray(testimonialsArr) ? testimonialsArr : [])
+        setProjects(    Array.isArray(projectsArr)     ? projectsArr.slice(0, 6)   : [])
+        setServices(    Array.isArray(servicesArr)     ? servicesArr.slice(0, 4)   : [])
+        setTestimonials(Array.isArray(testimonialsArr) ? testimonialsArr            : [])
       } catch (error) {
-        console.log('[v0] Error fetching data:', error)
+        console.log('[HomePage] fetch error:', error)
       } finally {
         setLoading(false)
       }
@@ -66,7 +71,7 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Hero Section */}
+      {/* ── Hero ── */}
       <section className="relative min-h-[70vh] sm:min-h-[75vh] md:min-h-[80vh] lg:min-h-[90vh] overflow-hidden">
         <motion.div style={{ opacity: heroOpacity, scale: heroScale }} className="absolute inset-0">
           <Swiper
@@ -79,10 +84,7 @@ export default function HomePage() {
           >
             {heroImages.map((image, index) => (
               <SwiperSlide key={index}>
-                <div
-                  className="h-full w-full bg-cover bg-center"
-                  style={{ backgroundImage: `url(${image})` }}
-                >
+                <div className="h-full w-full bg-cover bg-center" style={{ backgroundImage: `url(${image})` }}>
                   <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/70" />
                 </div>
               </SwiperSlide>
@@ -106,7 +108,7 @@ export default function HomePage() {
                 <span className="text-gold">Masterpiece</span>
               </h1>
               <p className="mt-6 text-lg md:text-xl text-white/80 max-w-xl leading-relaxed">
-                Experience luxury living with our bespoke interior design solutions. 
+                Experience luxury living with our bespoke interior design solutions.
                 From concept to completion, we create spaces that inspire.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
@@ -127,24 +129,17 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Scroll Indicator */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
           className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
         >
           <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
-            <motion.div
-              animate={{ y: [0, 12, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="w-1.5 h-1.5 bg-gold rounded-full mt-2"
-            />
+            <motion.div animate={{ y: [0, 12, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="w-1.5 h-1.5 bg-gold rounded-full mt-2" />
           </div>
         </motion.div>
       </section>
 
-      {/* Stats Section */}
+      {/* ── Stats ── */}
       <Section className="bg-charcoal py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -160,9 +155,7 @@ export default function HomePage() {
                 <div className="w-14 h-14 mx-auto bg-gold/10 rounded-xl flex items-center justify-center mb-4">
                   <stat.icon className="w-7 h-7 text-gold" />
                 </div>
-                <div className="text-3xl md:text-4xl font-serif font-bold text-white">
-                  {stat.value}
-                </div>
+                <div className="text-3xl md:text-4xl font-serif font-bold text-white">{stat.value}</div>
                 <div className="mt-1 text-sm text-white/60">{stat.label}</div>
               </motion.div>
             ))}
@@ -170,7 +163,7 @@ export default function HomePage() {
         </div>
       </Section>
 
-      {/* Featured Projects */}
+      {/* ── Featured Projects ── */}
       <Section className="bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
@@ -187,12 +180,9 @@ export default function HomePage() {
               </Button>
             </Link>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {loading
-              ? Array.from({ length: 6 }).map((_, i) => (
-                  <ProjectCardSkeleton key={i} />
-                ))
+              ? Array.from({ length: 6 }).map((_, i) => <ProjectCardSkeleton key={i} />)
               : projects.map((project, index) => (
                   <ProjectCard key={project._id || project.id || index} project={project} index={index} />
                 ))}
@@ -200,21 +190,20 @@ export default function HomePage() {
         </div>
       </Section>
 
-      {/* Services Section */}
-      <Section className="bg-sand">
+      {/* ── Services ── REDESIGNED with real images ── */}
+      <Section className="bg-charcoal overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionHeader
             badge="What We Offer"
             title="Our Services"
             description="Comprehensive interior design services tailored to transform your vision into reality."
             centered
+            className="text-white [&_p]:text-white/70"
           />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {loading
-              ? Array.from({ length: 4 }).map((_, i) => (
-                  <ServiceCardSkeleton key={i} />
-                ))
+              ? Array.from({ length: 4 }).map((_, i) => <ServiceCardSkeleton key={i} />)
               : services.map((service, index) => (
                   <ServiceCard key={service._id} service={service} index={index} />
                 ))}
@@ -231,7 +220,7 @@ export default function HomePage() {
         </div>
       </Section>
 
-      {/* Why Choose Us */}
+      {/* ── Why Choose Us ── */}
       <Section className="bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -239,15 +228,15 @@ export default function HomePage() {
               <SectionHeader
                 badge="Why Modplint Interiors"
                 title="Creating Timeless Spaces Since 2020"
-                description="With over a decade of experience, we've established ourselves as Mumbai's premier interior design studio, blending contemporary aesthetics with timeless elegance."
+                description="With years of experience, we've established ourselves as Mumbai's premier interior design studio, blending contemporary aesthetics with timeless elegance."
                 className="mb-8"
               />
               <div className="space-y-6">
                 {[
                   { title: 'Bespoke Design Solutions', desc: 'Every project is unique, crafted to reflect your personality and lifestyle.' },
-                  { title: 'End-to-End Service', desc: 'From concept development to final installation, we handle everything.' },
-                  { title: 'Premium Materials', desc: 'We source only the finest materials from trusted suppliers worldwide.' },
-                  { title: 'On-Time Delivery', desc: 'We respect your time and deliver projects within the agreed timeline.' },
+                  { title: 'End-to-End Service',       desc: 'From concept development to final installation, we handle everything.' },
+                  { title: 'Premium Materials',         desc: 'We source only the finest materials from trusted suppliers worldwide.' },
+                  { title: 'On-Time Delivery',          desc: 'We respect your time and deliver projects within the agreed timeline.' },
                 ].map((item, index) => (
                   <motion.div
                     key={item.title}
@@ -290,7 +279,7 @@ export default function HomePage() {
         </div>
       </Section>
 
-      {/* Testimonials */}
+      {/* ── Testimonials ── */}
       <Section className="bg-charcoal">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionHeader
@@ -300,12 +289,9 @@ export default function HomePage() {
             centered
             className="text-white [&_p]:text-white/70"
           />
-
           {loading ? (
             <div className="grid md:grid-cols-3 gap-6">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <TestimonialCardSkeleton key={i} />
-              ))}
+              {Array.from({ length: 3 }).map((_, i) => <TestimonialCardSkeleton key={i} />)}
             </div>
           ) : testimonials.length === 0 ? (
             <p className="text-center text-white/50 py-12">No testimonials yet.</p>
@@ -316,10 +302,7 @@ export default function HomePage() {
               pagination={{ clickable: true }}
               spaceBetween={24}
               slidesPerView={1}
-              breakpoints={{
-                768: { slidesPerView: 2 },
-                1024: { slidesPerView: 3 },
-              }}
+              breakpoints={{ 768: { slidesPerView: 2 }, 1024: { slidesPerView: 3 } }}
               className="pb-12"
             >
               {testimonials.map((testimonial) => (
@@ -332,14 +315,10 @@ export default function HomePage() {
         </div>
       </Section>
 
-      {/* CTA Section */}
+      {/* ── CTA ── */}
       <Section className="bg-gradient-to-br from-gold/20 via-background to-gold/10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             <span className="inline-block px-4 py-2 bg-gold/10 text-gold text-sm font-medium rounded-full mb-6">
               Start Your Journey
             </span>
@@ -347,19 +326,16 @@ export default function HomePage() {
               Ready to Create Your Dream Space?
             </h2>
             <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-              {"Book a free consultation with our expert designers and let's bring your vision to life."}
+              Book a free consultation with our expert designers and let's bring your vision to life.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/booking">
                 <Button variant="gold" size="xl">
-                  Schedule Consultation
-                  <ArrowRight className="w-5 h-5" />
+                  Schedule Consultation <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
               <Link to="/contact">
-                <Button variant="outline" size="xl">
-                  Contact Us
-                </Button>
+                <Button variant="outline" size="xl">Contact Us</Button>
               </Link>
             </div>
           </motion.div>
@@ -369,9 +345,9 @@ export default function HomePage() {
   )
 }
 
+// ─── Project Card ─────────────────────────────────────────────────────────────
 function ProjectCard({ project, index }) {
   const projectId = project._id || project.id
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -383,7 +359,6 @@ function ProjectCard({ project, index }) {
       <Link to={projectId ? `/projects/${projectId}` : '/projects'}>
         <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
           <img
-            // FIX: project images are objects {url, publicId}, not plain strings
             src={project.images?.[0]?.url || project.images?.[0] || 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80'}
             alt={project.title}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -397,12 +372,9 @@ function ProjectCard({ project, index }) {
         </div>
         <div className="mt-4">
           <span className="text-sm text-gold font-medium">{project.category}</span>
-          <h3 className="mt-1 text-lg font-semibold group-hover:text-gold transition-colors">
-            {project.title}
-          </h3>
+          <h3 className="mt-1 text-lg font-semibold group-hover:text-gold transition-colors">{project.title}</h3>
           <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1">
-            <MapPin className="w-3 h-3" />
-            {project.location}
+            <MapPin className="w-3 h-3" />{project.location}
           </p>
         </div>
       </Link>
@@ -410,89 +382,112 @@ function ProjectCard({ project, index }) {
   )
 }
 
+// ─── Service Card — NEW DESIGN with real images ───────────────────────────────
 function ServiceCard({ service, index }) {
+  // Resolve image: use first uploaded image, else first media item, else unsplash fallback
+  const imageUrl =
+    service.image?.url ||
+    service.media?.[0]?.url ||
+    FALLBACK_SERVICE_IMAGES[index % FALLBACK_SERVICE_IMAGES.length]
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ delay: index * 0.1 }}
-      className={cn(
-        'group p-8 rounded-2xl bg-card border border-border hover:border-gold/50 transition-colors',
-        index === 0 && 'md:col-span-2 lg:col-span-1'
-      )}
+      transition={{ delay: index * 0.1, duration: 0.5 }}
+      className="group relative overflow-hidden rounded-2xl cursor-pointer"
     >
-      <div className="w-14 h-14 rounded-xl bg-gold/10 flex items-center justify-center text-gold text-2xl mb-6">
-        {getServiceIcon(service.icon)}
-      </div>
-      <h3 className="text-xl font-serif font-semibold group-hover:text-gold transition-colors">
-        {service.title}
-      </h3>
-      <p className="mt-3 text-muted-foreground text-sm leading-relaxed">
-        {service.description}
-      </p>
-      {service.features && service.features.length > 0 && (
-        <ul className="mt-4 space-y-2">
-          {service.features.slice(0, 3).map((feature, i) => (
-            <li key={i} className="text-sm text-muted-foreground flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-gold" />
-              {feature}
-            </li>
-          ))}
-        </ul>
-      )}
+      <Link to="/services">
+        {/* ── Image fills entire card ── */}
+        <div className="relative aspect-[3/4] overflow-hidden">
+          <img
+            src={imageUrl}
+            alt={service.title}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            onError={(e) => {
+              e.target.src = FALLBACK_SERVICE_IMAGES[index % FALLBACK_SERVICE_IMAGES.length]
+            }}
+          />
+
+          {/* Dark gradient overlay — always visible at bottom, stronger on hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent transition-all duration-500" />
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500" />
+
+          {/* Gold top accent line */}
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700" />
+
+          {/* Content sits at bottom of image */}
+          <div className="absolute bottom-0 left-0 right-0 p-5">
+            {/* Service number badge */}
+            <div className="mb-3 inline-flex items-center gap-1.5">
+              <span className="w-5 h-px bg-gold" />
+              <span className="text-gold text-xs font-medium tracking-widest uppercase">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+            </div>
+
+            {/* Title */}
+            <h3 className="text-white text-xl font-serif font-bold leading-tight group-hover:text-gold transition-colors duration-300">
+              {service.title}
+            </h3>
+
+            {/* Description — hidden by default, slides up on hover */}
+            <div className="overflow-hidden max-h-0 group-hover:max-h-32 transition-all duration-500 ease-in-out">
+              <p className="text-white/75 text-sm leading-relaxed mt-2 line-clamp-3">
+                {service.description}
+              </p>
+
+              {/* Features */}
+              {service.features && service.features.length > 0 && (
+                <ul className="mt-3 space-y-1">
+                  {service.features.slice(0, 2).map((feature, i) => (
+                    <li key={i} className="flex items-center gap-2 text-xs text-white/60">
+                      <div className="w-1 h-1 rounded-full bg-gold flex-shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* CTA link */}
+            <div className="mt-3 flex items-center gap-2 text-gold text-sm font-medium opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+              <span>Learn More</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+          </div>
+        </div>
+      </Link>
     </motion.div>
   )
 }
 
+// ─── Testimonial Card ─────────────────────────────────────────────────────────
 function TestimonialCard({ testimonial }) {
   return (
     <div className="p-8 rounded-2xl bg-white/5 backdrop-blur border border-white/10 h-full">
       <div className="flex items-center gap-1 mb-4">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Star
-            key={i}
-            className={cn(
-              'w-5 h-5',
-              i < testimonial.rating ? 'fill-gold text-gold' : 'text-white/20'
-            )}
-          />
+          <Star key={i} className={cn('w-5 h-5', i < testimonial.rating ? 'fill-gold text-gold' : 'text-white/20')} />
         ))}
       </div>
-      {/* FIX: DB field is `review`, not `content` */}
       <p className="text-white/80 leading-relaxed">{testimonial.review}</p>
       <div className="mt-6 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full overflow-hidden bg-gold/20">
-          {/* FIX: image is an object {url, publicId}, not a plain string */}
+        <div className="w-12 h-12 rounded-full overflow-hidden bg-gold/20 flex-shrink-0">
           {testimonial.image?.url ? (
-            <img
-              src={testimonial.image.url}
-              alt={testimonial.name}
-              className="w-full h-full object-cover"
-            />
+            <img src={testimonial.image.url} alt={testimonial.name} className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gold font-semibold">
+            <div className="w-full h-full flex items-center justify-center text-gold font-semibold text-lg">
               {testimonial.name?.charAt(0)}
             </div>
           )}
         </div>
         <div>
           <div className="font-semibold text-white">{testimonial.name}</div>
-          {/* FIX: DB field is `profession`, not `designation` or `company` */}
           <div className="text-sm text-white/60">{testimonial.profession}</div>
         </div>
       </div>
     </div>
   )
-}
-
-function getServiceIcon(iconName) {
-  const icons = {
-    home: '🏠',
-    building: '🏢',
-    paintbrush: '🎨',
-    sofa: '🛋️',
-    default: '✨',
-  }
-  return icons[iconName?.toLowerCase()] || icons.default
 }
