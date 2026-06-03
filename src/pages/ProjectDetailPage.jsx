@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation, Thumbs, Pagination } from 'swiper/modules'
-import { ArrowLeft, ArrowRight, MapPin, Calendar, Maximize, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, MapPin, Calendar, Maximize, ChevronLeft, ChevronRight, X, Film } from 'lucide-react'
 import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -22,6 +22,19 @@ function getImageUrl(img, fallback = 'https://images.unsplash.com/photo-16002104
   if (typeof img === 'string') return img        // plain string (legacy)
   if (img.url) return img.url                    // object { url, publicId }
   return fallback
+}
+
+// Detect if a media item is a video (by resourceType or URL extension)
+function isVideoMedia(img) {
+  if (!img) return false
+  if (img.resourceType === 'video') return true
+  if (typeof img === 'string') {
+    return /\.(mp4|mov|avi|webm|mkv)(\?|$)/i.test(img)
+  }
+  if (img.url) {
+    return /\.(mp4|mov|avi|webm|mkv)(\?|$)/i.test(img.url)
+  }
+  return false
 }
 
 export default function ProjectDetailPage() {
@@ -101,13 +114,19 @@ export default function ProjectDetailPage() {
   }
 
   // FIX: map each image entry to a plain URL string using the helper
-  const imageUrls = project.images?.length
-    ? project.images.map((img) => getImageUrl(img))
-    : [
-        'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=80',
-        'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80',
-        'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&q=80',
-      ]
+  // Also keep track of which entries are videos so we can render <video> tags
+  const fallbackImages = [
+    'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80',
+    'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&q=80',
+  ]
+
+  const mediaItems = project.images?.length
+    ? project.images.map(img => ({
+        url: getImageUrl(img),
+        isVideo: isVideoMedia(img),
+      }))
+    : fallbackImages.map(url => ({ url, isVideo: false }))
 
   return (
     <>
@@ -123,7 +142,7 @@ export default function ProjectDetailPage() {
             </Link>
           </motion.div>
 
-          {/* Main image gallery */}
+          {/* Main image/video gallery */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
             <Swiper
               modules={[Navigation, Thumbs, Pagination]}
@@ -132,18 +151,29 @@ export default function ProjectDetailPage() {
               pagination={{ clickable: true }}
               className="aspect-[16/9] min-h-[260px] rounded-2xl overflow-hidden"
             >
-              {imageUrls.map((url, index) => (
+              {mediaItems.map((item, index) => (
                 <SwiperSlide key={index}>
-                  {/* FIX: use plain url string (not image object) for backgroundImage */}
-                  <div
-                    className="w-full h-full bg-cover bg-center cursor-pointer relative group"
-                    style={{ backgroundImage: `url(${url})` }}
-                    onClick={() => openLightbox(index)}
-                  >
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                      <Maximize className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {/* FIX: render <video> for video files, <div background-image> for images */}
+                  {item.isVideo ? (
+                    <div className="w-full h-full relative bg-black flex items-center justify-center">
+                      <video
+                        src={item.url}
+                        controls
+                        className="w-full h-full object-contain"
+                        playsInline
+                      />
                     </div>
-                  </div>
+                  ) : (
+                    <div
+                      className="w-full h-full bg-cover bg-center cursor-pointer relative group"
+                      style={{ backgroundImage: `url(${item.url})` }}
+                      onClick={() => openLightbox(index)}
+                    >
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                        <Maximize className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                  )}
                 </SwiperSlide>
               ))}
               <button className="swiper-button-prev-custom absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
@@ -155,7 +185,7 @@ export default function ProjectDetailPage() {
             </Swiper>
 
             {/* Thumbnail strip */}
-            {imageUrls.length > 1 && (
+            {mediaItems.length > 1 && (
               <Swiper
                 modules={[Thumbs]}
                 onSwiper={setThumbsSwiper}
@@ -170,13 +200,19 @@ export default function ProjectDetailPage() {
                   1024: { slidesPerView: 6 },
                 }}
               >
-                {imageUrls.map((url, index) => (
+                {mediaItems.map((item, index) => (
                   <SwiperSlide key={index}>
-                    {/* FIX: use plain url string for thumbnails */}
-                    <div
-                      className="aspect-video rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-gold transition-colors"
-                      style={{ backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-                    />
+                    {/* FIX: show video icon for video thumbnails */}
+                    {item.isVideo ? (
+                      <div className="aspect-video rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-gold transition-colors bg-black flex items-center justify-center">
+                        <Film className="w-6 h-6 text-white/70" />
+                      </div>
+                    ) : (
+                      <div
+                        className="aspect-video rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-gold transition-colors"
+                        style={{ backgroundImage: `url(${item.url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                      />
+                    )}
                   </SwiperSlide>
                 ))}
               </Swiper>
@@ -304,7 +340,7 @@ export default function ProjectDetailPage() {
         </Section>
       )}
 
-      {/* Lightbox */}
+      {/* Lightbox — only opens for image items */}
       <Modal isOpen={lightboxOpen} onClose={() => setLightboxOpen(false)} size="full">
         <div className="relative h-[90vh] bg-black flex items-center justify-center">
           <button
@@ -320,14 +356,23 @@ export default function ProjectDetailPage() {
             initialSlide={lightboxIndex}
             className="w-full h-full"
           >
-            {imageUrls.map((url, index) => (
+            {mediaItems.map((item, index) => (
               <SwiperSlide key={index} className="flex items-center justify-center">
-                {/* FIX: use plain url string for lightbox */}
-                <img
-                  src={url}
-                  alt={`${project.title} - Image ${index + 1}`}
-                  className="max-w-full max-h-full object-contain"
-                />
+                {/* FIX: render video in lightbox too */}
+                {item.isVideo ? (
+                  <video
+                    src={item.url}
+                    controls
+                    className="max-w-full max-h-full object-contain"
+                    playsInline
+                  />
+                ) : (
+                  <img
+                    src={item.url}
+                    alt={`${project.title} - Image ${index + 1}`}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                )}
               </SwiperSlide>
             ))}
           </Swiper>
