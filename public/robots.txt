@@ -1,0 +1,16 @@
+# robots.txt for modplintinteriors.com
+# Generated for SEO — allows all major crawlers
+
+User-agent: *
+Allow: /
+
+# Disallow admin and API routes from being indexed
+Disallow: /admin/
+Disallow: /admin
+
+# Allow Google Image Bot
+User-agent: Googlebot-Image
+Allow: /
+
+# Sitemap location
+Sitemap: https://www.modplintinteriors.com/sitemap.xml
