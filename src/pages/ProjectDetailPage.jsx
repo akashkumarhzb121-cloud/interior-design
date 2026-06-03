@@ -15,26 +15,21 @@ import 'swiper/css/navigation'
 import 'swiper/css/thumbs'
 import 'swiper/css/pagination'
 
-// Helper: always extract a usable URL string from an image entry
-// Backend stores images as { url, publicId } objects, not plain strings
+// Extract URL string from image entry ({ url, publicId } or plain string)
 function getImageUrl(img, fallback = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=80') {
   if (!img) return fallback
-  if (typeof img === 'string') return img        // plain string (legacy)
-  if (img.url) return img.url                    // object { url, publicId }
+  if (typeof img === 'string') return img
+  if (img.url) return img.url
   return fallback
 }
 
-// Detect if a media item is a video (by resourceType or URL extension)
-function isVideoMedia(img) {
-  if (!img) return false
-  if (img.resourceType === 'video') return true
-  if (typeof img === 'string') {
-    return /\.(mp4|mov|avi|webm|mkv)(\?|$)/i.test(img)
-  }
-  if (img.url) {
-    return /\.(mp4|mov|avi|webm|mkv)(\?|$)/i.test(img.url)
-  }
-  return false
+// Detect if a URL is a video (cloudinary stores videos at /video/upload/ path)
+function isVideoUrl(url) {
+  if (!url) return false
+  return (
+    url.includes('/video/upload/') ||
+    /\.(mp4|mov|avi|webm|mkv)(\?|$)/i.test(url)
+  )
 }
 
 export default function ProjectDetailPage() {
@@ -57,11 +52,9 @@ export default function ProjectDetailPage() {
           projectsApi.getAll(),
         ])
 
-        // FIX: getById returns { success, data: project } → unwrap
         const projectData = projectRes.data?.data || projectRes.data
         setProject(projectData)
 
-        // FIX: getAll returns { success, data: [...] } → unwrap
         const allProjects = allProjectsRes.data?.data || allProjectsRes.data || []
         const related = allProjects
           .filter((p) => (p._id || p.id) !== id && p.category === projectData?.category)
@@ -102,9 +95,7 @@ export default function ProjectDetailPage() {
     return (
       <div className="min-h-screen pt-24 pb-16 bg-background flex items-center justify-center px-4">
         <div className="max-w-xl text-center">
-          <p className="text-lg text-muted-foreground mb-6">
-            We could not load that project right now.
-          </p>
+          <p className="text-lg text-muted-foreground mb-6">We could not load that project right now.</p>
           <Link to="/projects">
             <Button variant="outline" className="mx-auto">Back to Projects</Button>
           </Link>
@@ -113,20 +104,20 @@ export default function ProjectDetailPage() {
     )
   }
 
-  // FIX: map each image entry to a plain URL string using the helper
-  // Also keep track of which entries are videos so we can render <video> tags
-  const fallbackImages = [
-    'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80',
-    'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&q=80',
-  ]
-
+  // Build media list — each item has { url, isVideo }
+  // FIX: previously ALL items were rendered as CSS background-image.
+  // Videos stored in project.images[] have no resourceType field, so we
+  // detect them by inspecting the Cloudinary URL path (/video/upload/).
   const mediaItems = project.images?.length
-    ? project.images.map(img => ({
-        url: getImageUrl(img),
-        isVideo: isVideoMedia(img),
-      }))
-    : fallbackImages.map(url => ({ url, isVideo: false }))
+    ? project.images.map((img) => {
+        const url = getImageUrl(img)
+        return { url, isVideo: isVideoUrl(url) }
+      })
+    : [
+        { url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&q=80', isVideo: false },
+        { url: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80', isVideo: false },
+        { url: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&q=80', isVideo: false },
+      ]
 
   return (
     <>
@@ -134,15 +125,12 @@ export default function ProjectDetailPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-8">
-            <Link
-              to="/projects"
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <Link to="/projects" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="w-4 h-4" />Back to Projects
             </Link>
           </motion.div>
 
-          {/* Main image/video gallery */}
+          {/* ── Main gallery ── */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
             <Swiper
               modules={[Navigation, Thumbs, Pagination]}
@@ -153,14 +141,14 @@ export default function ProjectDetailPage() {
             >
               {mediaItems.map((item, index) => (
                 <SwiperSlide key={index}>
-                  {/* FIX: render <video> for video files, <div background-image> for images */}
+                  {/* FIX: render <video> for video files, background-image div for images */}
                   {item.isVideo ? (
-                    <div className="w-full h-full relative bg-black flex items-center justify-center">
+                    <div className="w-full h-full bg-black flex items-center justify-center">
                       <video
                         src={item.url}
                         controls
-                        className="w-full h-full object-contain"
                         playsInline
+                        className="w-full h-full object-contain"
                       />
                     </div>
                   ) : (
@@ -190,7 +178,6 @@ export default function ProjectDetailPage() {
                 modules={[Thumbs]}
                 onSwiper={setThumbsSwiper}
                 spaceBetween={12}
-                slidesPerView={6}
                 watchSlidesProgress
                 className="mt-4"
                 breakpoints={{
@@ -202,10 +189,10 @@ export default function ProjectDetailPage() {
               >
                 {mediaItems.map((item, index) => (
                   <SwiperSlide key={index}>
-                    {/* FIX: show video icon for video thumbnails */}
+                    {/* FIX: show film icon for video thumbnails */}
                     {item.isVideo ? (
-                      <div className="aspect-video rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-gold transition-colors bg-black flex items-center justify-center">
-                        <Film className="w-6 h-6 text-white/70" />
+                      <div className="aspect-video rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-gold transition-colors bg-charcoal flex items-center justify-center">
+                        <Film className="w-6 h-6 text-gold/70" />
                       </div>
                     ) : (
                       <div
@@ -219,14 +206,9 @@ export default function ProjectDetailPage() {
             )}
           </motion.div>
 
-          {/* Project info */}
+          {/* ── Project info ── */}
           <div className="grid lg:grid-cols-3 gap-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="lg:col-span-2"
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="lg:col-span-2">
               <span className="inline-block px-4 py-1.5 bg-gold/10 text-gold text-sm font-medium rounded-full mb-4">
                 {project.category}
               </span>
@@ -239,8 +221,7 @@ export default function ProjectDetailPage() {
                 )}
                 {project.completionDate && (
                   <span className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    {new Date(project.completionDate).getFullYear()}
+                    <Calendar className="w-4 h-4" />{new Date(project.completionDate).getFullYear()}
                   </span>
                 )}
               </div>
@@ -251,11 +232,7 @@ export default function ProjectDetailPage() {
               </div>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <div className="bg-card border border-border rounded-2xl p-6 lg:sticky lg:top-28">
                 <h3 className="text-lg font-semibold mb-4">Project Details</h3>
                 <dl className="space-y-4">
@@ -293,7 +270,7 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* Related projects */}
+      {/* ── Related projects ── */}
       {relatedProjects.length > 0 && (
         <Section className="bg-sand">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -301,29 +278,25 @@ export default function ProjectDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {relatedProjects.map((rel, index) => {
                 const relId = rel._id || rel.id
-                // FIX: related project images are also objects
-                const relImageUrl = getImageUrl(rel.images?.[0])
+                const relUrl = getImageUrl(rel.images?.[0])
+                const relIsVideo = isVideoUrl(relUrl)
                 return (
                   <motion.div
                     key={relId}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
+                    initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }} transition={{ delay: index * 0.1 }}
                     className="group"
                   >
                     <Link to={`/projects/${relId}`}>
                       <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-                        <img
-                          src={relImageUrl}
-                          alt={rel.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
+                        {relIsVideo ? (
+                          <video src={relUrl} muted playsInline preload="metadata" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                        ) : (
+                          <img src={relUrl} alt={rel.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                         <div className="absolute bottom-4 left-4 right-4">
-                          <h3 className="text-lg font-semibold text-white group-hover:text-gold transition-colors">
-                            {rel.title}
-                          </h3>
+                          <h3 className="text-lg font-semibold text-white group-hover:text-gold transition-colors">{rel.title}</h3>
                           {rel.location && (
                             <p className="text-white/70 text-sm flex items-center gap-1 mt-1">
                               <MapPin className="w-3 h-3" />{rel.location}
@@ -340,7 +313,7 @@ export default function ProjectDetailPage() {
         </Section>
       )}
 
-      {/* Lightbox — only opens for image items */}
+      {/* ── Lightbox ── */}
       <Modal isOpen={lightboxOpen} onClose={() => setLightboxOpen(false)} size="full">
         <div className="relative h-[90vh] bg-black flex items-center justify-center">
           <button
@@ -358,18 +331,18 @@ export default function ProjectDetailPage() {
           >
             {mediaItems.map((item, index) => (
               <SwiperSlide key={index} className="flex items-center justify-center">
-                {/* FIX: render video in lightbox too */}
+                {/* FIX: render <video> in lightbox for video items */}
                 {item.isVideo ? (
                   <video
                     src={item.url}
                     controls
-                    className="max-w-full max-h-full object-contain"
                     playsInline
+                    className="max-w-full max-h-full object-contain"
                   />
                 ) : (
                   <img
                     src={item.url}
-                    alt={`${project.title} - Image ${index + 1}`}
+                    alt={`${project.title} - ${index + 1}`}
                     className="max-w-full max-h-full object-contain"
                   />
                 )}
