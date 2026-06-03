@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, EffectFade, Pagination } from 'swiper/modules'
-import { ArrowRight, Play, Star, MapPin, Award, Users, Home as HomeIcon, Film } from 'lucide-react'
+import { ArrowRight, Play, Star, MapPin, Award, Users, Home as HomeIcon } from 'lucide-react'
 import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { ProjectCardSkeleton, ServiceCardSkeleton, TestimonialCardSkeleton } from '@/components/ui/Skeleton'
@@ -53,11 +53,9 @@ export default function HomePage() {
           servicesApi.getAll(),
           testimonialsApi.getAll(),
         ])
-        // FIX: backend wraps all responses as { success, data: [...] }
-        // so the array lives at response.data.data
         const projectsArr     = projectsRes.data?.data     || projectsRes.data     || []
-        const servicesArr     = servicesRes.data?.data     || servicesRes.data     || []
-        const testimonialsArr = testimonialsRes.data?.data || testimonialsRes.data  || []
+        const servicesArr     = servicesRes.data?.data      || servicesRes.data      || []
+        const testimonialsArr = testimonialsRes.data?.data  || testimonialsRes.data  || []
 
         setProjects(    Array.isArray(projectsArr)     ? projectsArr.slice(0, 6)   : [])
         setServices(    Array.isArray(servicesArr)     ? servicesArr.slice(0, 4)   : [])
@@ -384,14 +382,13 @@ function ProjectCard({ project, index }) {
   )
 }
 
-// ─── Service Card — with real uploaded images/videos ─────────────────────────
+// ─── Service Card — NEW DESIGN with real images ───────────────────────────────
 function ServiceCard({ service, index }) {
-  // FIX: Resolve media — prefer uploaded image, then first video, then fallback
-  const uploadedImage = service.image?.url || service.media?.find(m => m.resourceType === 'image')?.url
-  const uploadedVideo = service.media?.find(m => m.resourceType === 'video')?.url
-  const isVideo = !uploadedImage && !!uploadedVideo
-
-  const imageUrl = uploadedImage || uploadedVideo || FALLBACK_SERVICE_IMAGES[index % FALLBACK_SERVICE_IMAGES.length]
+  // Resolve image: use first uploaded image, else first media item, else unsplash fallback
+  const imageUrl =
+    service.image?.url ||
+    service.media?.[0]?.url ||
+    FALLBACK_SERVICE_IMAGES[index % FALLBACK_SERVICE_IMAGES.length]
 
   return (
     <motion.div
@@ -402,37 +399,25 @@ function ServiceCard({ service, index }) {
       className="group relative overflow-hidden rounded-2xl cursor-pointer"
     >
       <Link to="/services">
-        {/* ── Media fills entire card ── */}
+        {/* ── Image fills entire card ── */}
         <div className="relative aspect-[3/4] overflow-hidden">
-          {isVideo ? (
-            <video
-              src={uploadedVideo}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              muted
-              loop
-              playsInline
-              onMouseEnter={e => e.target.play()}
-              onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0 }}
-            />
-          ) : (
-            <img
-              src={imageUrl}
-              alt={service.title}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              onError={(e) => {
-                e.target.src = FALLBACK_SERVICE_IMAGES[index % FALLBACK_SERVICE_IMAGES.length]
-              }}
-            />
-          )}
+          <img
+            src={imageUrl}
+            alt={service.title}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            onError={(e) => {
+              e.target.src = FALLBACK_SERVICE_IMAGES[index % FALLBACK_SERVICE_IMAGES.length]
+            }}
+          />
 
-          {/* Dark gradient overlay */}
+          {/* Dark gradient overlay — always visible at bottom, stronger on hover */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent transition-all duration-500" />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500" />
 
           {/* Gold top accent line */}
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700" />
 
-          {/* Content sits at bottom of media */}
+          {/* Content sits at bottom of image */}
           <div className="absolute bottom-0 left-0 right-0 p-5">
             {/* Service number badge */}
             <div className="mb-3 inline-flex items-center gap-1.5">
@@ -447,11 +432,13 @@ function ServiceCard({ service, index }) {
               {service.title}
             </h3>
 
-            {/* Description — slides up on hover */}
+            {/* Description — hidden by default, slides up on hover */}
             <div className="overflow-hidden max-h-0 group-hover:max-h-32 transition-all duration-500 ease-in-out">
               <p className="text-white/75 text-sm leading-relaxed mt-2 line-clamp-3">
                 {service.description}
               </p>
+
+              {/* Features */}
               {service.features && service.features.length > 0 && (
                 <ul className="mt-3 space-y-1">
                   {service.features.slice(0, 2).map((feature, i) => (
@@ -477,45 +464,78 @@ function ServiceCard({ service, index }) {
 }
 
 // ─── Testimonial Card ─────────────────────────────────────────────────────────
+// FIX: Now shows uploaded images/videos from admin above the review text.
+// Previously only the small author avatar was rendered — media[] was never displayed.
 function TestimonialCard({ testimonial }) {
-  // FIX: Show all uploaded media (images + videos) not just the avatar image
-  const mediaItems = [
-    ...(testimonial.media || []),
-    ...(!testimonial.media?.length && testimonial.image?.url
+  const [activeIdx, setActiveIdx] = useState(0)
+
+  // Build media list: prefer media[] array, fall back to legacy image field
+  const mediaItems = testimonial.media?.length
+    ? testimonial.media
+    : testimonial.image?.url
       ? [{ url: testimonial.image.url, resourceType: 'image' }]
-      : []),
-  ]
+      : []
+
+  const active = mediaItems[activeIdx]
 
   return (
-    <div className="p-8 rounded-2xl bg-white/5 backdrop-blur border border-white/10 h-full">
-      <div className="flex items-center gap-1 mb-4">
+    <div className="p-6 rounded-2xl bg-white/5 backdrop-blur border border-white/10 h-full flex flex-col gap-4">
+      {/* Stars */}
+      <div className="flex items-center gap-1">
         {Array.from({ length: 5 }).map((_, i) => (
           <Star key={i} className={cn('w-5 h-5', i < testimonial.rating ? 'fill-gold text-gold' : 'text-white/20')} />
         ))}
       </div>
 
-      {/* FIX: Show uploaded media (first item) above review text */}
-      {mediaItems.length > 0 && (
-        <div className="mb-4 rounded-xl overflow-hidden w-full aspect-video bg-black/20">
-          {mediaItems[0].resourceType === 'video' ? (
-            <video
-              src={mediaItems[0].url}
-              controls
-              className="w-full h-full object-cover"
-              playsInline
-            />
-          ) : (
-            <img
-              src={mediaItems[0].url}
-              alt="Review media"
-              className="w-full h-full object-cover"
-            />
+      {/* Uploaded media — shown above review text */}
+      {active && (
+        <div>
+          <div className="w-full aspect-video rounded-xl overflow-hidden bg-black/20">
+            {active.resourceType === 'video' ? (
+              <video
+                src={active.url}
+                controls
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <img
+                src={active.url}
+                alt="Review media"
+                className="w-full h-full object-cover"
+              />
+            )}
+          </div>
+          {/* Thumbnail strip when multiple media items */}
+          {mediaItems.length > 1 && (
+            <div className="flex gap-1.5 mt-2 flex-wrap">
+              {mediaItems.map((m, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveIdx(i)}
+                  className={cn(
+                    'w-10 h-10 rounded-md overflow-hidden border-2 flex-shrink-0 transition-all',
+                    i === activeIdx ? 'border-gold' : 'border-transparent opacity-50 hover:opacity-100'
+                  )}
+                >
+                  {m.resourceType === 'video' ? (
+                    <div className="w-full h-full bg-white/10 flex items-center justify-center">
+                      <Play className="w-3 h-3 text-white" />
+                    </div>
+                  ) : (
+                    <img src={m.url} alt="" className="w-full h-full object-cover" />
+                  )}
+                </button>
+              ))}
+            </div>
           )}
         </div>
       )}
 
-      <p className="text-white/80 leading-relaxed">{testimonial.review}</p>
-      <div className="mt-6 flex items-center gap-4">
+      <p className="text-white/80 leading-relaxed flex-1">"{testimonial.review}"</p>
+
+      {/* Author */}
+      <div className="flex items-center gap-4 pt-4 border-t border-white/10">
         <div className="w-12 h-12 rounded-full overflow-hidden bg-gold/20 flex-shrink-0">
           {testimonial.image?.url ? (
             <img src={testimonial.image.url} alt={testimonial.name} className="w-full h-full object-cover" />
