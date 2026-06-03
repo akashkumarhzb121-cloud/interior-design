@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Check, Home, Building2, Paintbrush, Sofa, Lightbulb, HardHat } from 'lucide-react'
+import { ArrowRight, Check, Home, Building2, Paintbrush, Sofa, Lightbulb, HardHat, Play } from 'lucide-react'
 import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { ServiceCardSkeleton } from '@/components/ui/Skeleton'
 import { servicesApi } from '@/api/services'
 import { cn } from '@/lib/utils'
-import PayButton from '@/components/PayButton'  // FIX: import PayButton
+import PayButton from '@/components/PayButton'
 
 const iconMap = { home: Home, building: Building2, paintbrush: Paintbrush, sofa: Sofa, lightbulb: Lightbulb, hardhat: HardHat }
 
@@ -28,7 +28,6 @@ const process = [
   { step: '05', title: 'Styling & Handover', description: 'We add the finishing touches and hand over your beautifully transformed space.' },
 ]
 
-// FIX: pricing plans now include numeric `amount` for Razorpay
 const pricingPlans = [
   {
     title: 'Consultation',
@@ -67,9 +66,12 @@ export default function ServicesPage() {
     const fetchServices = async () => {
       try {
         const response = await servicesApi.getAll()
-        setServices(response.data?.length ? response.data : defaultServices)
+        // FIX: backend wraps response as { success, data: [...] }
+        // response.data = { success, data: [...] }  →  actual array is at response.data.data
+        const list = response.data?.data || response.data || []
+        setServices(Array.isArray(list) && list.length ? list : defaultServices)
       } catch (error) {
-        console.log('[v0] Error fetching services:', error)
+        console.log('[ServicesPage] Error fetching services:', error)
         setServices(defaultServices)
       } finally {
         setLoading(false)
@@ -122,7 +124,6 @@ export default function ServicesPage() {
         </div>
       </Section>
 
-      {/* FIX: Pricing section now uses PayButton instead of <Link to="/booking"> */}
       <Section className="bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionHeader badge="Investment" title="Flexible Pricing Options" description="We offer transparent pricing tailored to your project scope." centered />
@@ -152,8 +153,6 @@ export default function ServicesPage() {
                     </li>
                   ))}
                 </ul>
-
-                {/* FIX: replaced <Link to="/booking"> with PayButton */}
                 <div className="mt-8">
                   <PayButton
                     serviceName={plan.title}
@@ -186,16 +185,77 @@ export default function ServicesPage() {
   )
 }
 
+// FIX: ServiceCard now renders uploaded images/videos from the backend.
+// Previously it only showed an icon — now it shows the real uploaded media.
 function ServiceCard({ service, index }) {
   const IconComponent = iconMap[service.icon?.toLowerCase()] || Paintbrush
+
+  // Resolve the primary media item: prefer image, fall back to first media of any type
+  const primaryMedia =
+    service.media?.find(m => m.resourceType === 'image') ||
+    service.media?.[0] ||
+    null
+
+  const imageUrl = service.image?.url || primaryMedia?.url || null
+  const isVideo = !service.image?.url && primaryMedia?.resourceType === 'video'
+
+  // Show all media items (images + videos)
+  const allMedia = service.media?.length
+    ? service.media
+    : (service.image?.url ? [{ url: service.image.url, resourceType: 'image' }] : [])
+
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="group p-8 rounded-2xl bg-card border border-border hover:border-gold/50 hover:shadow-lg transition-all">
-      <div className="w-14 h-14 rounded-xl bg-gold/10 flex items-center justify-center mb-6 group-hover:bg-gold/20 transition-colors"><IconComponent className="w-7 h-7 text-gold" /></div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.1 }}
+      className="group p-8 rounded-2xl bg-card border border-border hover:border-gold/50 hover:shadow-lg transition-all"
+    >
+      {/* Media area — show uploaded image/video if available, else show icon */}
+      {allMedia.length > 0 ? (
+        <div className="w-full aspect-video rounded-xl overflow-hidden mb-6 bg-muted">
+          {isVideo ? (
+            <video
+              src={primaryMedia.url}
+              className="w-full h-full object-cover"
+              muted
+              loop
+              playsInline
+              onMouseEnter={e => e.target.play()}
+              onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0 }}
+            />
+          ) : (
+            <img
+              src={imageUrl}
+              alt={service.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={e => { e.target.parentElement.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-gold/10"><svg xmlns='http://www.w3.org/2000/svg' class='w-10 h-10 text-gold' fill='none' viewBox='0 0 24 24' stroke='currentColor'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z'/></svg></div>` }}
+            />
+          )}
+          {/* Media count badge if multiple */}
+          {allMedia.length > 1 && (
+            <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+              +{allMedia.length - 1} more
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="w-14 h-14 rounded-xl bg-gold/10 flex items-center justify-center mb-6 group-hover:bg-gold/20 transition-colors">
+          <IconComponent className="w-7 h-7 text-gold" />
+        </div>
+      )}
+
       <h3 className="text-xl font-serif font-semibold group-hover:text-gold transition-colors">{service.title}</h3>
       <p className="mt-3 text-muted-foreground text-sm leading-relaxed">{service.description}</p>
       {service.features && service.features.length > 0 && (
         <ul className="mt-6 space-y-2">
-          {service.features.map((feature, i) => <li key={i} className="text-sm flex items-center gap-2"><Check className="w-4 h-4 text-gold flex-shrink-0" /><span className="text-muted-foreground">{feature}</span></li>)}
+          {service.features.map((feature, i) => (
+            <li key={i} className="text-sm flex items-center gap-2">
+              <Check className="w-4 h-4 text-gold flex-shrink-0" />
+              <span className="text-muted-foreground">{feature}</span>
+            </li>
+          ))}
         </ul>
       )}
     </motion.div>
