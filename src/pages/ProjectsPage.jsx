@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Search, MapPin, ArrowRight, Filter, X, AlertCircle, Film } from 'lucide-react'
+import { Search, MapPin, ArrowRight, Filter, X, AlertCircle } from 'lucide-react'
 import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -11,21 +11,13 @@ import { cn } from '@/lib/utils'
 
 const categories = ['All', 'Residential', 'Commercial', 'Hospitality', 'Office', 'Retail']
 
-// Extract URL string from image entry ({ url, publicId } or plain string)
+// Helper: safely extract URL string from image entry
+// Backend stores images as { url, publicId } objects, not plain strings
 function getImageUrl(img, fallback = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80') {
   if (!img) return fallback
-  if (typeof img === 'string') return img
-  if (img.url) return img.url
+  if (typeof img === 'string') return img   // plain string (legacy)
+  if (img.url) return img.url               // object { url, publicId }
   return fallback
-}
-
-// Detect video by Cloudinary URL path or file extension
-function isVideoUrl(url) {
-  if (!url) return false
-  return (
-    url.includes('/video/upload/') ||
-    /\.(mp4|mov|avi|webm|mkv)(\?|$)/i.test(url)
-  )
 }
 
 export default function ProjectsPage() {
@@ -43,6 +35,9 @@ export default function ProjectsPage() {
       try {
         setError(null)
         const response = await projectsApi.getAll()
+        // FIX: backend wraps data as { success, data: [...] }
+        // axios gives response.data = { success, data: [...] }
+        // so the array lives at response.data.data
         const list = response.data?.data || response.data || []
         setProjects(Array.isArray(list) ? list : [])
         setFilteredProjects(Array.isArray(list) ? list : [])
@@ -146,7 +141,10 @@ export default function ProjectsPage() {
                 className="pl-10 h-10"
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               )}
@@ -211,7 +209,11 @@ export default function ProjectsPage() {
               ) : filteredProjects.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {filteredProjects.map((project, index) => (
-                    <ProjectCard key={project._id || project.id || index} project={project} index={index} />
+                    <ProjectCard
+                      key={project._id || project.id || index}
+                      project={project}
+                      index={index}
+                    />
                   ))}
                 </div>
               ) : (
@@ -220,7 +222,9 @@ export default function ProjectsPage() {
                     <Search className="w-8 h-8 text-muted-foreground" />
                   </div>
                   <h3 className="text-xl font-semibold">No projects found</h3>
-                  <p className="text-muted-foreground mt-2">Try adjusting your search or filter criteria</p>
+                  <p className="text-muted-foreground mt-2">
+                    Try adjusting your search or filter criteria
+                  </p>
                   <Button
                     variant="outline"
                     className="mt-4"
@@ -258,11 +262,8 @@ export default function ProjectsPage() {
 function ProjectCard({ project, index }) {
   const projectId = project._id || project.id
 
-  // Extract URL from images[0] — backend stores as { url, publicId } object
+  // FIX: images are stored as objects {url, publicId} not plain strings
   const imageUrl = getImageUrl(project.images?.[0])
-
-  // FIX: if the first uploaded file is a video, render <video> not <img>
-  const isVideo = isVideoUrl(imageUrl)
 
   return (
     <motion.div
@@ -273,29 +274,12 @@ function ProjectCard({ project, index }) {
       className="group"
     >
       <Link to={projectId ? `/projects/${projectId}` : '/projects'}>
-        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-muted">
-          {isVideo ? (
-            <>
-              <video
-                src={imageUrl}
-                muted
-                playsInline
-                preload="metadata"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-              {/* Video badge */}
-              <div className="absolute top-3 left-3 bg-black/60 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                <Film className="w-3 h-3" /> Video
-              </div>
-            </>
-          ) : (
-            <img
-              src={imageUrl}
-              alt={project.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              onError={e => { e.currentTarget.src = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80' }}
-            />
-          )}
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
+          <img
+            src={imageUrl}
+            alt={project.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-6">
             <span className="inline-block px-3 py-1 bg-gold/90 text-charcoal text-xs font-medium rounded-full mb-2">
