@@ -73,6 +73,26 @@ function MediaUploadZone({ inputRef, onChange, label = 'Images & Videos', multip
   )
 }
 
+// ── FIX: helper to get the first image URL from a service (admin table preview)
+// Previously this read service.image?.url (legacy single-image field).
+// New uploads populate service.media[] — so check that first.
+function getServicePreviewUrl(service) {
+  // New uploads: check media[] for first image
+  const firstMediaImage = (service.media || []).find(m => !m.resourceType || m.resourceType === 'image')
+  if (firstMediaImage?.url) return firstMediaImage.url
+  // Legacy single image field
+  if (service.image?.url) return service.image.url
+  // Video fallback (show it as image thumbnail via poster-less video — handled in JSX)
+  return null
+}
+
+// ── FIX: check if service has a video to show as fallback thumbnail
+function getServicePreviewVideo(service) {
+  if (getServicePreviewUrl(service)) return null // already have an image
+  const firstVideo = (service.media || []).find(m => m.resourceType === 'video')
+  return firstVideo?.url || null
+}
+
 export default function ManageServices() {
   const [services, setServices] = useState([])
   const [loading, setLoading] = useState(true)
@@ -127,7 +147,7 @@ export default function ManageServices() {
     const existing = [
       ...(service.media || []).map(m => ({ src: m.url, type: m.resourceType || 'image', name: '', existing: true, publicId: m.publicId })),
       // Fallback: legacy single image
-      ...((!service.media?.length && service.image?.url) ? [{ src: service.image.url, type: 'image', name: '', existing: true }] : []),
+      ...(!service.media?.length && service.image?.url ? [{ src: service.image.url, type: 'image', name: '', existing: true }] : []),
     ]
     setMediaPreviews(existing)
     setIsModalOpen(true)
@@ -165,7 +185,7 @@ export default function ManageServices() {
         data.append('media', p.file)
       }
 
-      // Tell backend which existing media to remove (ones removed from previews)
+      // Tell backend which existing media to remove
       if (editingService) {
         const existingInEdit = mediaPreviews.filter(p => p.existing && p.publicId).map(p => p.publicId)
         const originalIds = [
@@ -214,38 +234,49 @@ export default function ManageServices() {
               {loading ? (
                 <tr><td colSpan="5" className="px-6 py-10 text-center text-muted-foreground">Loading services...</td></tr>
               ) : services.length > 0 ? (
-                services.map((service) => (
-                  <tr key={service._id}>
-                    <td className="px-6 py-4">
-                      {service.image?.url ? (
-                        <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted">
-                          <img src={service.image.url} alt={service.title} className="w-full h-full object-cover" />
+                services.map((service) => {
+                  // FIX: use the helper that checks media[] first, then legacy image
+                  const previewUrl   = getServicePreviewUrl(service)
+                  const previewVideo = getServicePreviewVideo(service)
+                  const totalFiles   = (service.media?.length || 0) + (service.image?.url && !service.media?.length ? 1 : 0)
+
+                  return (
+                    <tr key={service._id}>
+                      <td className="px-6 py-4">
+                        {previewUrl ? (
+                          <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted">
+                            <img src={previewUrl} alt={service.title} className="w-full h-full object-cover" />
+                          </div>
+                        ) : previewVideo ? (
+                          <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted">
+                            <video src={previewVideo} className="w-full h-full object-cover" muted />
+                          </div>
+                        ) : (
+                          <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center">
+                            <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-foreground font-medium">{service.title}</td>
+                      <td className="px-6 py-4 text-muted-foreground text-sm">
+                        {totalFiles > 0 ? (
+                          <span className="flex items-center gap-1">
+                            <span className="bg-gold/20 text-gold text-xs px-2 py-0.5 rounded-full">{totalFiles} file{totalFiles !== 1 ? 's' : ''}</span>
+                          </span>
+                        ) : '—'}
+                      </td>
+                      <td className="px-6 py-4 text-muted-foreground max-w-xs truncate">{service.description}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" onClick={() => openEdit(service)}>Edit</Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDelete(service._id)} disabled={removing === service._id}>
+                            {removing === service._id ? 'Removing...' : 'Remove'}
+                          </Button>
                         </div>
-                      ) : (
-                        <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center">
-                          <ImageIcon className="w-5 h-5 text-muted-foreground" />
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-foreground font-medium">{service.title}</td>
-                    <td className="px-6 py-4 text-muted-foreground text-sm">
-                      {(service.media?.length || 0) > 0 ? (
-                        <span className="flex items-center gap-1">
-                          <span className="bg-gold/20 text-gold text-xs px-2 py-0.5 rounded-full">{service.media.length} file{service.media.length !== 1 ? 's' : ''}</span>
-                        </span>
-                      ) : '—'}
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground max-w-xs truncate">{service.description}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" onClick={() => openEdit(service)}>Edit</Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(service._id)} disabled={removing === service._id}>
-                          {removing === service._id ? 'Removing...' : 'Remove'}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                    </tr>
+                  )
+                })
               ) : (
                 <tr><td colSpan="5" className="px-6 py-10 text-center text-muted-foreground">No services found.</td></tr>
               )}
@@ -264,6 +295,11 @@ export default function ManageServices() {
               </label>
               <MediaUploadZone inputRef={mediaRef} onChange={handleMediaChange} />
               <MediaPreviewStrip previews={mediaPreviews} onRemove={removePreview} />
+              {mediaPreviews.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  {mediaPreviews.length} file{mediaPreviews.length !== 1 ? 's' : ''} — hover to remove
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-end gap-2">
