@@ -374,6 +374,7 @@ function ProjectCard({ project, index }) {
               src={previewUrl}
               alt={project.title}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              onError={(e) => { e.target.src = FALLBACK }}
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -513,19 +514,85 @@ function ServiceCard({ service, index }) {
 }
 
 // ─── Testimonial Card ─────────────────────────────────────────────────────────
+// FIX: now renders testimonial.media[] (uploaded photos/videos) in addition to
+//      the legacy testimonial.image field. Previously only the avatar used
+//      image.url — uploaded media was completely invisible on the home page.
 function TestimonialCard({ testimonial }) {
+  const [activeMedia, setActiveMedia] = useState(0)
+
+  // Combine new media[] array with legacy single image field
+  const mediaItems = [
+    ...(testimonial.media || []),
+    ...(!testimonial.media?.length && testimonial.image?.url
+      ? [{ url: testimonial.image.url, resourceType: 'image' }]
+      : []),
+  ]
+
+  // Avatar: prefer first image in media[], fall back to legacy image.url
+  const avatarUrl =
+    testimonial.image?.url ||
+    mediaItems.find(m => m.resourceType === 'image')?.url ||
+    null
+
   return (
-    <div className="p-8 rounded-2xl bg-white/5 backdrop-blur border border-white/10 h-full">
+    <div className="p-8 rounded-2xl bg-white/5 backdrop-blur border border-white/10 h-full flex flex-col">
       <div className="flex items-center gap-1 mb-4">
         {Array.from({ length: 5 }).map((_, i) => (
           <Star key={i} className={cn('w-5 h-5', i < testimonial.rating ? 'fill-gold text-gold' : 'text-white/20')} />
         ))}
       </div>
-      <p className="text-white/80 leading-relaxed">{testimonial.review}</p>
+
+      {/* ── Media gallery — shows uploaded photos/videos ── */}
+      {mediaItems.length > 0 && (
+        <div className="mb-4">
+          <div className="w-full h-40 rounded-xl overflow-hidden bg-white/10">
+            {mediaItems[activeMedia]?.resourceType === 'video' ? (
+              <video
+                src={mediaItems[activeMedia].url}
+                controls
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <img
+                src={mediaItems[activeMedia]?.url}
+                alt="Review media"
+                className="w-full h-full object-cover"
+                onError={(e) => { e.target.style.display = 'none' }}
+              />
+            )}
+          </div>
+          {mediaItems.length > 1 && (
+            <div className="flex gap-1.5 mt-2 flex-wrap">
+              {mediaItems.map((m, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveMedia(i)}
+                  className={cn(
+                    'w-8 h-8 rounded-md overflow-hidden border-2 transition-all',
+                    i === activeMedia ? 'border-gold' : 'border-white/20 opacity-60 hover:opacity-100'
+                  )}
+                >
+                  {m.resourceType === 'video' ? (
+                    <div className="w-full h-full bg-white/10 flex items-center justify-center">
+                      <Play className="w-3 h-3 text-white fill-current" />
+                    </div>
+                  ) : (
+                    <img src={m.url} alt="" className="w-full h-full object-cover" />
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <p className="text-white/80 leading-relaxed flex-1">{testimonial.review}</p>
+
       <div className="mt-6 flex items-center gap-4">
         <div className="w-12 h-12 rounded-full overflow-hidden bg-gold/20 flex-shrink-0">
-          {testimonial.image?.url ? (
-            <img src={testimonial.image.url} alt={testimonial.name} className="w-full h-full object-cover" />
+          {avatarUrl ? (
+            <img src={avatarUrl} alt={testimonial.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gold font-semibold text-lg">
               {testimonial.name?.charAt(0)}
