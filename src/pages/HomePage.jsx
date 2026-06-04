@@ -464,78 +464,16 @@ function ServiceCard({ service, index }) {
 }
 
 // ─── Testimonial Card ─────────────────────────────────────────────────────────
-// FIX: Now shows uploaded images/videos from admin above the review text.
-// Previously only the small author avatar was rendered — media[] was never displayed.
 function TestimonialCard({ testimonial }) {
-  const [activeIdx, setActiveIdx] = useState(0)
-
-  // Build media list: prefer media[] array, fall back to legacy image field
-  const mediaItems = testimonial.media?.length
-    ? testimonial.media
-    : testimonial.image?.url
-      ? [{ url: testimonial.image.url, resourceType: 'image' }]
-      : []
-
-  const active = mediaItems[activeIdx]
-
   return (
-    <div className="p-6 rounded-2xl bg-white/5 backdrop-blur border border-white/10 h-full flex flex-col gap-4">
-      {/* Stars */}
-      <div className="flex items-center gap-1">
+    <div className="p-8 rounded-2xl bg-white/5 backdrop-blur border border-white/10 h-full">
+      <div className="flex items-center gap-1 mb-4">
         {Array.from({ length: 5 }).map((_, i) => (
           <Star key={i} className={cn('w-5 h-5', i < testimonial.rating ? 'fill-gold text-gold' : 'text-white/20')} />
         ))}
       </div>
-
-      {/* Uploaded media — shown above review text */}
-      {active && (
-        <div>
-          <div className="w-full aspect-video rounded-xl overflow-hidden bg-black/20">
-            {active.resourceType === 'video' ? (
-              <video
-                src={active.url}
-                controls
-                playsInline
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <img
-                src={active.url}
-                alt="Review media"
-                className="w-full h-full object-cover"
-              />
-            )}
-          </div>
-          {/* Thumbnail strip when multiple media items */}
-          {mediaItems.length > 1 && (
-            <div className="flex gap-1.5 mt-2 flex-wrap">
-              {mediaItems.map((m, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveIdx(i)}
-                  className={cn(
-                    'w-10 h-10 rounded-md overflow-hidden border-2 flex-shrink-0 transition-all',
-                    i === activeIdx ? 'border-gold' : 'border-transparent opacity-50 hover:opacity-100'
-                  )}
-                >
-                  {m.resourceType === 'video' ? (
-                    <div className="w-full h-full bg-white/10 flex items-center justify-center">
-                      <Play className="w-3 h-3 text-white" />
-                    </div>
-                  ) : (
-                    <img src={m.url} alt="" className="w-full h-full object-cover" />
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      <p className="text-white/80 leading-relaxed flex-1">"{testimonial.review}"</p>
-
-      {/* Author */}
-      <div className="flex items-center gap-4 pt-4 border-t border-white/10">
+      <p className="text-white/80 leading-relaxed">{testimonial.review}</p>
+      <div className="mt-6 flex items-center gap-4">
         <div className="w-12 h-12 rounded-full overflow-hidden bg-gold/20 flex-shrink-0">
           {testimonial.image?.url ? (
             <img src={testimonial.image.url} alt={testimonial.name} className="w-full h-full object-cover" />
