@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Search, MapPin, ArrowRight, Filter, X, AlertCircle } from 'lucide-react'
+import { Search, MapPin, ArrowRight, Filter, X, AlertCircle, Play } from 'lucide-react'
 import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -11,38 +11,44 @@ import { cn } from '@/lib/utils'
 
 const categories = ['All', 'Residential', 'Commercial', 'Hospitality', 'Office', 'Retail']
 
-// Helper: safely extract URL string from image entry
-// Backend stores images as { url, publicId } objects, not plain strings
-function getImageUrl(img, fallback = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80') {
-  if (!img) return fallback
-  if (typeof img === 'string') return img   // plain string (legacy)
-  if (img.url) return img.url               // object { url, publicId }
-  return fallback
+// Returns the first IMAGE url from a project's images array.
+// Falls back to the first video if there are no images, or to the fallback URL.
+function getPreviewMedia(images = [], fallback = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80') {
+  if (!images.length) return { url: fallback, isVideo: false }
+
+  // Prefer the first image
+  for (const img of images) {
+    const url          = typeof img === 'string' ? img : img?.url
+    const resourceType = (typeof img === 'object' && img?.resourceType) ? img.resourceType : 'image'
+    if (url && resourceType !== 'video') return { url, isVideo: false }
+  }
+
+  // All files are videos — use first video
+  const first = images[0]
+  const url   = typeof first === 'string' ? first : first?.url
+  return url ? { url, isVideo: true } : { url: fallback, isVideo: false }
 }
 
 export default function ProjectsPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const [projects, setProjects] = useState([])
-  const [filteredProjects, setFilteredProjects] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [activeCategory, setActiveCategory] = useState(searchParams.get('category') || 'All')
-  const [showFilters, setShowFilters] = useState(false)
+  const [searchParams, setSearchParams]         = useSearchParams()
+  const [projects,          setProjects]         = useState([])
+  const [filteredProjects,  setFilteredProjects] = useState([])
+  const [loading,           setLoading]          = useState(true)
+  const [error,             setError]            = useState(null)
+  const [searchQuery,       setSearchQuery]      = useState('')
+  const [activeCategory,    setActiveCategory]   = useState(searchParams.get('category') || 'All')
+  const [showFilters,       setShowFilters]      = useState(false)
 
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         setError(null)
         const response = await projectsApi.getAll()
-        // FIX: backend wraps data as { success, data: [...] }
-        // axios gives response.data = { success, data: [...] }
-        // so the array lives at response.data.data
         const list = response.data?.data || response.data || []
-        setProjects(Array.isArray(list) ? list : [])
+        setProjects(    Array.isArray(list) ? list : [])
         setFilteredProjects(Array.isArray(list) ? list : [])
       } catch (error) {
-        console.error('[ProjectsPage] Error fetching projects:', error)
+        console.error('[ProjectsPage] fetch error:', error)
         setError('Failed to load projects. Please try again.')
       } finally {
         setLoading(false)
@@ -54,16 +60,13 @@ export default function ProjectsPage() {
   useEffect(() => {
     let filtered = [...projects]
     if (activeCategory !== 'All') {
-      filtered = filtered.filter(
-        (project) => project.category?.toLowerCase() === activeCategory.toLowerCase()
-      )
+      filtered = filtered.filter(p => p.category?.toLowerCase() === activeCategory.toLowerCase())
     }
     if (searchQuery) {
-      filtered = filtered.filter(
-        (project) =>
-          project.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          project.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          project.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter(p =>
+        p.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.description?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
     setFilteredProjects(filtered)
@@ -71,36 +74,23 @@ export default function ProjectsPage() {
 
   const handleCategoryChange = (category) => {
     setActiveCategory(category)
-    if (category === 'All') {
-      searchParams.delete('category')
-    } else {
-      searchParams.set('category', category)
-    }
+    if (category === 'All') searchParams.delete('category')
+    else searchParams.set('category', category)
     setSearchParams(searchParams)
   }
 
   return (
     <>
       {/* Hero */}
-      <section className="relative min-h-[60vh] sm:min-h-[64vh] md:min-h-[70vh] lg:min-h-[75vh] overflow-hidden bg-charcoal">
+      <section className="relative min-h-[60vh] sm:min-h-[64vh] md:min-h-[70vh] overflow-hidden bg-charcoal">
         <div className="absolute inset-0 opacity-20">
-          <img
-            src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1920&q=80"
-            alt=""
-            className="w-full h-full object-cover"
-          />
+          <img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1920&q=80" alt="" className="w-full h-full object-cover" />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 sm:py-28 lg:py-32">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl">
-            <span className="inline-block px-4 py-2 bg-gold/20 text-gold text-sm font-medium rounded-full mb-6">
-              Our Portfolio
-            </span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white">
-              Explore Our Projects
-            </h1>
-            <p className="mt-6 text-lg text-white/70 leading-relaxed">
-              Discover our collection of stunning interior design projects across Mumbai.
-            </p>
+            <span className="inline-block px-4 py-2 bg-gold/20 text-gold text-sm font-medium rounded-full mb-6">Our Portfolio</span>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white">Explore Our Projects</h1>
+            <p className="mt-6 text-lg text-white/70 leading-relaxed">Discover our collection of stunning interior design projects across Mumbai.</p>
           </motion.div>
         </div>
       </section>
@@ -110,64 +100,42 @@ export default function ProjectsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
             <div className="hidden lg:flex items-center gap-2">
-              {categories.map((category) => (
+              {categories.map(cat => (
                 <button
-                  key={category}
-                  onClick={() => handleCategoryChange(category)}
-                  className={cn(
-                    'px-4 py-2 rounded-full text-sm font-medium transition-colors',
-                    activeCategory === category
-                      ? 'bg-gold text-charcoal'
-                      : 'bg-secondary text-foreground hover:bg-gold/20'
+                  key={cat}
+                  onClick={() => handleCategoryChange(cat)}
+                  className={cn('px-4 py-2 rounded-full text-sm font-medium transition-colors',
+                    activeCategory === cat ? 'bg-gold text-charcoal' : 'bg-secondary text-foreground hover:bg-gold/20'
                   )}
                 >
-                  {category}
+                  {cat}
                 </button>
               ))}
             </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="lg:hidden flex items-center gap-2 px-4 py-2 bg-secondary rounded-lg"
-            >
+            <button onClick={() => setShowFilters(!showFilters)} className="lg:hidden flex items-center gap-2 px-4 py-2 bg-secondary rounded-lg">
               <Filter className="w-4 h-4" />Filters
             </button>
             <div className="relative w-full lg:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search projects..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-10"
-              />
+              <Input type="search" placeholder="Search projects…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10 h-10" />
               {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
-                >
+                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               )}
             </div>
           </div>
           {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="lg:hidden mt-4 flex flex-wrap gap-2"
-            >
-              {categories.map((category) => (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="lg:hidden mt-4 flex flex-wrap gap-2">
+              {categories.map(cat => (
                 <button
-                  key={category}
-                  onClick={() => { handleCategoryChange(category); setShowFilters(false) }}
-                  className={cn(
-                    'px-4 py-2 rounded-full text-sm font-medium transition-colors',
-                    activeCategory === category
-                      ? 'bg-gold text-charcoal'
-                      : 'bg-secondary text-foreground hover:bg-gold/20'
+                  key={cat}
+                  onClick={() => { handleCategoryChange(cat); setShowFilters(false) }}
+                  className={cn('px-4 py-2 rounded-full text-sm font-medium transition-colors',
+                    activeCategory === cat ? 'bg-gold text-charcoal' : 'bg-secondary text-foreground hover:bg-gold/20'
                   )}
                 >
-                  {category}
+                  {cat}
                 </button>
               ))}
             </motion.div>
@@ -175,7 +143,7 @@ export default function ProjectsPage() {
         </div>
       </Section>
 
-      {/* Projects grid */}
+      {/* Grid */}
       <Section className="bg-background pt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {error ? (
@@ -185,20 +153,14 @@ export default function ProjectsPage() {
               </div>
               <h3 className="text-xl font-semibold">Something went wrong</h3>
               <p className="text-muted-foreground mt-2">{error}</p>
-              <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
-                Try Again
-              </Button>
+              <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>Try Again</Button>
             </div>
           ) : (
             <>
               <div className="mb-8">
                 <p className="text-muted-foreground">
-                  Showing{' '}
-                  <span className="text-foreground font-medium">{filteredProjects.length}</span>{' '}
-                  project{filteredProjects.length !== 1 ? 's' : ''}
-                  {activeCategory !== 'All' && (
-                    <> in <span className="text-gold">{activeCategory}</span></>
-                  )}
+                  Showing <span className="text-foreground font-medium">{filteredProjects.length}</span> project{filteredProjects.length !== 1 ? 's' : ''}
+                  {activeCategory !== 'All' && <> in <span className="text-gold">{activeCategory}</span></>}
                 </p>
               </div>
 
@@ -209,11 +171,7 @@ export default function ProjectsPage() {
               ) : filteredProjects.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {filteredProjects.map((project, index) => (
-                    <ProjectCard
-                      key={project._id || project.id || index}
-                      project={project}
-                      index={index}
-                    />
+                    <ProjectCard key={project._id || project.id || index} project={project} index={index} />
                   ))}
                 </div>
               ) : (
@@ -222,14 +180,8 @@ export default function ProjectsPage() {
                     <Search className="w-8 h-8 text-muted-foreground" />
                   </div>
                   <h3 className="text-xl font-semibold">No projects found</h3>
-                  <p className="text-muted-foreground mt-2">
-                    Try adjusting your search or filter criteria
-                  </p>
-                  <Button
-                    variant="outline"
-                    className="mt-4"
-                    onClick={() => { setSearchQuery(''); handleCategoryChange('All') }}
-                  >
+                  <p className="text-muted-foreground mt-2">Try adjusting your search or filter criteria</p>
+                  <Button variant="outline" className="mt-4" onClick={() => { setSearchQuery(''); handleCategoryChange('All') }}>
                     Clear Filters
                   </Button>
                 </div>
@@ -242,16 +194,9 @@ export default function ProjectsPage() {
       {/* CTA */}
       <Section className="bg-sand">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <SectionHeader
-            badge="Start Your Project"
-            title="Have a Space to Transform?"
-            description="Let us bring your vision to life. Book a free consultation with our expert designers."
-            centered
-          />
+          <SectionHeader badge="Start Your Project" title="Have a Space to Transform?" description="Let us bring your vision to life. Book a free consultation with our expert designers." centered />
           <Link to="/booking">
-            <Button variant="gold" size="xl">
-              Book Consultation<ArrowRight className="w-5 h-5" />
-            </Button>
+            <Button variant="gold" size="xl">Book Consultation<ArrowRight className="w-5 h-5" /></Button>
           </Link>
         </div>
       </Section>
@@ -259,11 +204,12 @@ export default function ProjectsPage() {
   )
 }
 
+// ── Project card — shows image; if first file is video shows video thumbnail ─
 function ProjectCard({ project, index }) {
-  const projectId = project._id || project.id
-
-  // FIX: images are stored as objects {url, publicId} not plain strings
-  const imageUrl = getImageUrl(project.images?.[0])
+  const projectId              = project._id || project.id
+  const { url, isVideo }       = getPreviewMedia(project.images || [])
+  const totalFiles             = project.images?.length || 0
+  const hasMultiple            = totalFiles > 1
 
   return (
     <motion.div
@@ -274,13 +220,32 @@ function ProjectCard({ project, index }) {
       className="group"
     >
       <Link to={projectId ? `/projects/${projectId}` : '/projects'}>
-        <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-          <img
-            src={imageUrl}
-            alt={project.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-muted">
+          {isVideo ? (
+            /* Video preview */
+            <>
+              <video src={url} className="w-full h-full object-cover" muted />
+              <span className="absolute top-3 left-3 flex items-center gap-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded-full">
+                <Play className="w-2.5 h-2.5 fill-white" /> Video
+              </span>
+            </>
+          ) : (
+            <img
+              src={url}
+              alt={project.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+          )}
+
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+          {/* Multi-file badge */}
+          {hasMultiple && (
+            <span className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+              +{totalFiles - 1} more
+            </span>
+          )}
+
           <div className="absolute bottom-0 left-0 right-0 p-6">
             <span className="inline-block px-3 py-1 bg-gold/90 text-charcoal text-xs font-medium rounded-full mb-2">
               {project.category}
@@ -294,6 +259,7 @@ function ProjectCard({ project, index }) {
               </p>
             )}
           </div>
+
           <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
             <div className="w-10 h-10 bg-gold rounded-full flex items-center justify-center">
               <ArrowRight className="w-5 h-5 text-charcoal" />
