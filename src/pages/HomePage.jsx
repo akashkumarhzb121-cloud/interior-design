@@ -347,7 +347,16 @@ export default function HomePage() {
 
 // ─── Project Card ─────────────────────────────────────────────────────────────
 function ProjectCard({ project, index }) {
-  const projectId = project._id || project.id
+  const projectId  = project._id || project.id
+  const images     = project.images || []
+  const FALLBACK   = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80'
+
+  // Find first image (skip videos for the thumbnail)
+  const firstImg   = images.find(img => !img.resourceType || img.resourceType === 'image')
+  const firstVideo = images.find(img => img.resourceType === 'video')
+  const previewUrl = firstImg?.url || firstVideo?.url || (typeof images[0] === 'string' ? images[0] : FALLBACK)
+  const isVideo    = !firstImg && !!firstVideo
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -357,13 +366,22 @@ function ProjectCard({ project, index }) {
       className="group"
     >
       <Link to={projectId ? `/projects/${projectId}` : '/projects'}>
-        <div className="relative aspect-[4/3] rounded-xl overflow-hidden">
-          <img
-            src={project.images?.[0]?.url || project.images?.[0] || 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80'}
-            alt={project.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-muted">
+          {isVideo ? (
+            <video src={previewUrl} muted className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+          ) : (
+            <img
+              src={previewUrl}
+              alt={project.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          {images.length > 1 && (
+            <span className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+              +{images.length - 1} more
+            </span>
+          )}
           <div className="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
             <span className="inline-flex items-center gap-2 text-white text-sm font-medium">
               View Project <ArrowRight className="w-4 h-4" />
@@ -382,13 +400,20 @@ function ProjectCard({ project, index }) {
   )
 }
 
-// ─── Service Card — NEW DESIGN with real images ───────────────────────────────
+// ─── Service Card — shows all uploaded images/videos with gallery ─────────────
 function ServiceCard({ service, index }) {
-  // Resolve image: use first uploaded image, else first media item, else unsplash fallback
-  const imageUrl =
-    service.image?.url ||
-    service.media?.[0]?.url ||
-    FALLBACK_SERVICE_IMAGES[index % FALLBACK_SERVICE_IMAGES.length]
+  const [activeIdx, setActiveIdx] = useState(0)
+
+  // Build media list: prefer media[], fall back to legacy image field, then unsplash
+  const mediaItems = (() => {
+    if (service.media && service.media.length > 0) return service.media
+    if (service.image?.url) return [{ url: service.image.url, resourceType: 'image' }]
+    return [{ url: FALLBACK_SERVICE_IMAGES[index % FALLBACK_SERVICE_IMAGES.length], resourceType: 'image' }]
+  })()
+
+  const current  = mediaItems[activeIdx] || mediaItems[0]
+  const isVideo  = current?.resourceType === 'video'
+  const fallback = FALLBACK_SERVICE_IMAGES[index % FALLBACK_SERVICE_IMAGES.length]
 
   return (
     <motion.div
@@ -399,46 +424,71 @@ function ServiceCard({ service, index }) {
       className="group relative overflow-hidden rounded-2xl cursor-pointer"
     >
       <Link to="/services">
-        {/* ── Image fills entire card ── */}
-        <div className="relative aspect-[3/4] overflow-hidden">
-          <img
-            src={imageUrl}
-            alt={service.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-            onError={(e) => {
-              e.target.src = FALLBACK_SERVICE_IMAGES[index % FALLBACK_SERVICE_IMAGES.length]
-            }}
-          />
+        <div className="relative aspect-[3/4] overflow-hidden bg-charcoal">
+          {/* ── Active media: image or video ── */}
+          {isVideo ? (
+            <video
+              key={current.url}
+              src={current.url}
+              muted
+              loop
+              playsInline
+              autoPlay
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+          ) : (
+            <img
+              key={current.url}
+              src={current.url}
+              alt={service.title}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              onError={(e) => { e.target.src = fallback }}
+            />
+          )}
 
-          {/* Dark gradient overlay — always visible at bottom, stronger on hover */}
+          {/* ── Thumbnail dots for multiple files ── */}
+          {mediaItems.length > 1 && (
+            <div className="absolute top-3 left-0 right-0 flex justify-center gap-1.5 z-10">
+              {mediaItems.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={(e) => { e.preventDefault(); setActiveIdx(i) }}
+                  className={cn(
+                    'w-1.5 h-1.5 rounded-full transition-all duration-200',
+                    i === activeIdx ? 'bg-gold scale-125' : 'bg-white/50 hover:bg-white/80'
+                  )}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Dark gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent transition-all duration-500" />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-500" />
 
-          {/* Gold top accent line */}
+          {/* Gold sweep line */}
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-gold to-transparent transform -translate-x-full group-hover:translate-x-0 transition-transform duration-700" />
 
-          {/* Content sits at bottom of image */}
+          {/* Bottom content */}
           <div className="absolute bottom-0 left-0 right-0 p-5">
-            {/* Service number badge */}
             <div className="mb-3 inline-flex items-center gap-1.5">
               <span className="w-5 h-px bg-gold" />
               <span className="text-gold text-xs font-medium tracking-widest uppercase">
                 {String(index + 1).padStart(2, '0')}
               </span>
+              {mediaItems.length > 1 && (
+                <span className="ml-1 text-white/50 text-[10px]">{mediaItems.length} files</span>
+              )}
             </div>
 
-            {/* Title */}
             <h3 className="text-white text-xl font-serif font-bold leading-tight group-hover:text-gold transition-colors duration-300">
               {service.title}
             </h3>
 
-            {/* Description — hidden by default, slides up on hover */}
             <div className="overflow-hidden max-h-0 group-hover:max-h-32 transition-all duration-500 ease-in-out">
               <p className="text-white/75 text-sm leading-relaxed mt-2 line-clamp-3">
                 {service.description}
               </p>
-
-              {/* Features */}
               {service.features && service.features.length > 0 && (
                 <ul className="mt-3 space-y-1">
                   {service.features.slice(0, 2).map((feature, i) => (
@@ -451,7 +501,6 @@ function ServiceCard({ service, index }) {
               )}
             </div>
 
-            {/* CTA link */}
             <div className="mt-3 flex items-center gap-2 text-gold text-sm font-medium opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300">
               <span>Learn More</span>
               <ArrowRight className="w-3.5 h-3.5" />
