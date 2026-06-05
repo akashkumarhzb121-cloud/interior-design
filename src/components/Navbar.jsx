@@ -47,9 +47,15 @@ export default function Navbar() {
       animate={{ y: 0 }}
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        isScrolled
+        // FIX: navbar overlap on mobile — always show a solid background.
+        // Previously the navbar was fully transparent until scrolled,
+        // meaning on first page load the hero content showed through the
+        // navbar and they overlapped visually. Now we always show the
+        // background on mobile (lg:) and only go transparent on large
+        // screens when at the very top.
+        isScrolled || isMobileMenuOpen
           ? 'bg-background/95 backdrop-blur-md shadow-sm border-b border-border'
-          : 'bg-transparent'
+          : 'bg-transparent lg:bg-transparent bg-background/95 backdrop-blur-md'
       )}
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -140,7 +146,7 @@ export default function Navbar() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden overflow-hidden"
+              className="lg:hidden overflow-hidden bg-background/98 backdrop-blur-md"
             >
               <div className="py-4 space-y-2 border-t border-border">
                 {navLinks.map((link) => (
