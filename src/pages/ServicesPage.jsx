@@ -30,8 +30,7 @@ const process = [
 
 const pricingPlans = [
   { title: 'Consultation', price: '₹1,000', amount: 1000,  period: 'per session',  description: 'Perfect for quick guidance',     features: ['2-hour session', 'Design recommendations', 'Shopping list', 'Color palette', 'Layout suggestions'],                                       highlighted: false },
-  { title: 'Full Service', price: '₹600',   amount: 600,   period: 'per sq. ft.',  description: 'Complete design and execution',  features: ['Complete design concept', '3D visualizations', 'Material procurement', 'Project management', 'Installation & styling'],                 highlighted: true  },
-  { title: 'E-Design',     price: '₹15,000', amount: 15000, period: 'per room',    description: 'Remote design services',          features: ['Online consultation', 'Design board', 'Furniture plan', 'Shopping links', 'Email support'],                                            highlighted: false },
+  { title: '3D-Design',     price: '₹12,000', amount: 12000, period: 'per room',    description: 'Home design services',          features: ['Complete design concept', '3D visualizations', 'Sketch drawing', 'Furniture plan', 'Customer support'],                                            highlighted: true },
 ]
 
 // ── Resolves a service's media into a clean array
