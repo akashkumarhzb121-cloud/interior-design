@@ -21,9 +21,9 @@ const heroImages = [
 ]
 
 const stats = [
-  { icon: HomeIcon, value: '150+', label: 'Projects Completed' },
-  { icon: Users,    value: '100+', label: 'Happy Clients' },
-  { icon: Award,    value: '5+',   label: 'Design Awards' },
+  { icon: HomeIcon, value: '30+', label: 'Projects Completed' },
+  { icon: Users,    value: '25+', label: 'Happy Clients' },
+  { icon: Award,    value: '8.3/10',   label: 'Performance Achieved' },
   { icon: MapPin,   value: '20+',  label: 'Locations in Mumbai' },
 ]
 
@@ -227,14 +227,14 @@ export default function HomePage() {
             <div>
               <SectionHeader
                 badge="Why Modplint Interiors"
-                title="Creating Timeless Spaces Since 2020"
+                title="Creating Timeless Spaces Since 2024"
                 description="With years of experience, we've established ourselves as Mumbai's premier interior design studio, blending contemporary aesthetics with timeless elegance."
                 className="mb-8"
               />
               <div className="space-y-6">
                 {[
-                  { title: 'Bespoke Design Solutions', desc: 'Every project is unique, crafted to reflect your personality and lifestyle.' },
-                  { title: 'End-to-End Service',       desc: 'From concept development to final installation, we handle everything.' },
+                  { title: 'Design Solutions',          desc: 'Every project is unique, crafted to reflect your personality and lifestyle.' },
+                  { title: 'End-to-End Service',        desc: 'From concept development to final installation, we handle everything.' },
                   { title: 'Premium Materials',         desc: 'We source only the finest materials from trusted suppliers worldwide.' },
                   { title: 'On-Time Delivery',          desc: 'We respect your time and deliver projects within the agreed timeline.' },
                 ].map((item, index) => (
@@ -271,7 +271,7 @@ export default function HomePage() {
                 />
               </div>
               <div className="absolute -bottom-6 -left-6 bg-gold text-charcoal p-6 rounded-2xl shadow-xl">
-                <div className="text-4xl font-serif font-bold">5+</div>
+                <div className="text-4xl font-serif font-bold">2+</div>
                 <div className="text-sm font-medium">Years of Excellence</div>
               </div>
             </motion.div>

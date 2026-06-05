@@ -231,12 +231,7 @@ export default function ProjectDetailPage() {
                       <dd className="font-medium">{project.location}</dd>
                     </div>
                   )}
-                  {project.budget && (
-                    <div className="flex justify-between py-2 border-b border-border">
-                      <dt className="text-muted-foreground">Budget</dt>
-                      <dd className="font-medium">₹{Number(project.budget).toLocaleString('en-IN')}</dd>
-                    </div>
-                  )}
+                  
                   {project.completionDate && (
                     <div className="flex justify-between py-2 border-b border-border">
                       <dt className="text-muted-foreground">Year</dt>
