@@ -15,6 +15,12 @@ export default function MainLayout() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
+      {/*
+        pt-20 = 80px = navbar height (h-20).
+        This pushes all page content below the fixed navbar so nothing
+        is hidden behind it on initial render — especially important on
+        mobile where the navbar is always opaque (not transparent).
+      */}
       <main className="flex-1 pt-20">
         <AnimatePresence mode="wait">
           <motion.div
