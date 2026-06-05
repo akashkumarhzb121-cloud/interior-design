@@ -47,12 +47,6 @@ export default function Navbar() {
       animate={{ y: 0 }}
       className={cn(
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-        // FIX: navbar overlap on mobile — always show a solid background.
-        // Previously the navbar was fully transparent until scrolled,
-        // meaning on first page load the hero content showed through the
-        // navbar and they overlapped visually. Now we always show the
-        // background on mobile (lg:) and only go transparent on large
-        // screens when at the very top.
         isScrolled || isMobileMenuOpen
           ? 'bg-background/95 backdrop-blur-md shadow-sm border-b border-border'
           : 'bg-transparent lg:bg-transparent bg-background/95 backdrop-blur-md'
@@ -61,10 +55,10 @@ export default function Navbar() {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <span className="text-2xl font-serif font-bold text-gold">Modplint</span>
-            <span className="text-2xl font-serif font-light">Interiors</span>
-          </Link>
+          <Link to="/" className="inline-block leading-none">
+              <span className="block text-2xl font-serif font-bold text-gold leading-tight">Modplint</span>
+              <span className="block text-2xl font-serif font-light leading-tight ml-[1.15rem]">Interiors</span>
+            </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-8">
