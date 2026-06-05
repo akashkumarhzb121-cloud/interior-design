@@ -84,17 +84,17 @@ export default function Footer() {
                 Modplint
               </span>
               {/*
-                ml-[0.6rem] nudges "Interiors" right so its left edge
+                ml-[0.2rem] nudges "Interiors" right so its left edge
                 aligns with the "p" in "Modplint" (after the "Mod" prefix).
                 Adjust this value if your font renders slightly differently.
               */}
-              <span className="block text-2xl font-serif font-light text-white leading-tight ml-[0.6rem]">
+              <span className="block text-2xl font-serif font-light text-white leading-tight ml-[0.2rem]">
                 Interiors
               </span>
             </Link>
             <p className="mt-4 text-white/70 text-sm leading-relaxed">
               Transforming spaces into extraordinary experiences. Premium interior
-              design services in Mumbai since 2020.
+              design services in Mumbai since 2024.
             </p>
             <div className="flex items-center gap-4 mt-6">
               {socialLinks.map((social) => (
@@ -174,10 +174,10 @@ export default function Footer() {
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-gold flex-shrink-0" />
                 <a
-                  href="mailto:modplint@gmail.com"
+                  href="mailto:modplintinteriors@gmail.com"
                   className="text-white/70 hover:text-gold transition-colors text-sm"
                 >
-                  modplint@gmail.com
+                  modplintinteriors@gmail.com
                 </a>
               </li>
             </ul>
