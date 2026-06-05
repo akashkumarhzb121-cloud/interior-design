@@ -57,7 +57,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link to="/" className="inline-block leading-none">
               <span className="block text-2xl font-serif font-bold text-gold leading-tight">Modplint</span>
-              <span className="block text-2xl font-serif font-light leading-tight ml-[1.15rem]">Interiors</span>
+              <span className="block text-2xl font-serif font-light leading-tight ml-[0.6rem]">Interiors</span>
             </Link>
 
           {/* Desktop Navigation */}
