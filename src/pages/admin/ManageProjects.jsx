@@ -307,11 +307,7 @@ export default function ManageProjects() {
                 value={form.location}
                 onChange={(e) => setForm(s => ({ ...s, location: e.target.value }))}
               />
-              <Input
-                id="budget" label="Budget (₹)" type="number"
-                value={form.budget}
-                onChange={(e) => setForm(s => ({ ...s, budget: e.target.value }))}
-              />
+
             </div>
 
             <Input
