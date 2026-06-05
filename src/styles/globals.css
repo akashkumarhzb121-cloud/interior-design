@@ -60,9 +60,14 @@
   --gold: oklch(0.75 0.12 85);
   --gold-light: oklch(0.85 0.08 85);
   --gold-dark: oklch(0.55 0.14 85);
-  --sand: oklch(0.22 0.01 80);
-  --cream: oklch(0.16 0.01 80);
-  --charcoal: oklch(0.95 0.005 80);
+  --sand: oklch(0.18 0.01 80);
+  --cream: oklch(0.14 0.01 80);
+  /* FIX: charcoal was oklch(0.95) in dark mode — near-white.
+     Every bg-charcoal section (hero, team, CTA, footer, stats) became a
+     white background with white text on top = completely invisible text.
+     Keeping charcoal as a true dark colour in both light and dark mode
+     so those sections always render as dark panels with white text. */
+  --charcoal: oklch(0.20 0.01 80);
 }
 
 @theme inline {
@@ -116,6 +121,22 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif;
   }
+}
+
+/* ── NAVBAR OVERLAP FIX ──────────────────────────────────────────────────────
+   The navbar is fixed (h-20 = 80px) and transparent until scrolled.
+   On mobile, when a page first loads the hero section sits directly behind
+   the transparent navbar — the content overlaps the nav before any scroll.
+   MainLayout adds pt-20 to <main> but hero sections use relative/absolute
+   positioning with their own py-24 padding, which means the hero content
+   can still peek under the navbar on initial render.
+
+   Fix: we give every hero <section> an explicit top padding that includes
+   the navbar height so the visible content always starts below the navbar,
+   even on first paint before any scroll event fires.
+   ────────────────────────────────────────────────────────────────────────── */
+section.hero-section {
+  padding-top: max(6rem, calc(5rem + env(safe-area-inset-top, 0px)));
 }
 
 /* Custom scrollbar */
