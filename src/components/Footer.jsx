@@ -1,194 +1,175 @@
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import {
-  MapPin,
-  Phone,
-  Mail,
-  Instagram,
-  Facebook,
-  Linkedin,
-  ArrowRight,
-} from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Menu, X, Sun, Moon, Phone } from 'lucide-react'
+import { useTheme } from '@/context/ThemeContext'
+import { cn } from '@/lib/utils'
 
-const footerLinks = {
-  company: [
-    { href: '/about', label: 'About Us' },
-    { href: '/projects', label: 'Our Projects' },
-    { href: '/services', label: 'Services' },
-    { href: '/testimonials', label: 'Testimonials' },
-  ],
-  services: [
-    { href: '/services', label: 'Residential Design' },
-    { href: '/services', label: 'Commercial Spaces' },
-    { href: '/services', label: 'Renovation' },
-    { href: '/services', label: 'Consultation' },
-  ],
-  legal: [
-    { href: '#', label: 'Privacy Policy' },
-    { href: '#', label: 'Terms of Service' },
-  ],
-}
-
-const socialLinks = [
-  { href: '#', icon: Instagram, label: 'Instagram' },
-  { href: '#', icon: Facebook, label: 'Facebook' },
-  { href: '#', icon: Linkedin, label: 'LinkedIn' },
+const navLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/about', label: 'About' },
+  { href: '/projects', label: 'Projects' },
+  { href: '/services', label: 'Services' },
+  { href: '/testimonials', label: 'Testimonials' },
+  { href: '/contact', label: 'Contact' },
 ]
 
-export default function Footer() {
+export default function Navbar() {
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { theme, toggleTheme } = useTheme()
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  const handleMobileNavClick = (href, event) => {
+    if (location.pathname === href) {
+      event.preventDefault()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+    setIsMobileMenuOpen(false)
+  }
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+  }, [location])
+
   return (
-    <footer className="bg-charcoal text-primary-foreground">
-      {/* CTA Section */}
-      <div className="border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex flex-col lg:flex-row items-center justify-between gap-8"
-          >
-            <div>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary-foreground">
-                Ready to Transform Your Space?
-              </h2>
-              <p className="mt-2 text-primary-foreground/70">
-                {"Let's create something extraordinary together."}
-              </p>
-            </div>
+    <motion.header
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      className={cn(
+        'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
+        isScrolled || isMobileMenuOpen
+          ? 'bg-background/95 backdrop-blur-md shadow-sm border-b border-border'
+          : 'bg-transparent lg:bg-transparent bg-background/95 backdrop-blur-md'
+      )}
+    >
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-20">
+          {/* Logo */}
+          <Link to="/" className="inline-block leading-none">
+              <span className="block text-2xl font-serif font-bold text-gold leading-tight">Modplint</span>
+              <span className="block text-2xl font-serif font-light leading-tight ml-[1.15rem]">Interiors</span>
+            </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden lg:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={cn(
+                  'relative text-sm font-medium transition-colors hover:text-gold',
+                  location.pathname === link.href
+                    ? 'text-gold'
+                    : 'text-foreground'
+                )}
+              >
+                {link.label}
+                {location.pathname === link.href && (
+                  <motion.div
+                    layoutId="navbar-indicator"
+                    className="absolute -bottom-1 left-0 right-0 h-0.5 bg-gold"
+                  />
+                )}
+              </Link>
+            ))}
+          </div>
+
+          {/* Right Side Actions */}
+          <div className="hidden lg:flex items-center gap-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-secondary transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? (
+                <Moon className="w-5 h-5" />
+              ) : (
+                <Sun className="w-5 h-5" />
+              )}
+            </button>
             <Link
               to="/booking"
-              className="flex items-center gap-2 px-8 py-4 bg-gold text-charcoal rounded-full font-medium hover:bg-gold-light transition-colors group"
+              className="flex items-center gap-2 px-6 py-2.5 bg-gold text-background rounded-full font-medium text-sm hover:bg-gold-dark transition-colors"
             >
-              Book Free Consultation
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <Phone className="w-4 h-4" />
+              Book Consultation
             </Link>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Main Footer */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-          {/* Brand */}
-          <div className="lg:col-span-1">
-            <Link to="/" className="flex items-center gap-2">
-              <span className="text-2xl font-serif font-bold text-gold">Modplint</span>
-              <span className="text-2xl font-serif font-light text-primary-foreground">Interiors</span>
-            </Link>
-            <p className="mt-4 text-primary-foreground/70 text-sm leading-relaxed">
-              Transforming spaces into extraordinary experiences. Premium interior
-              design services in Mumbai since 2020.
-            </p>
-            <div className="flex items-center gap-4 mt-6">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-gold hover:text-charcoal transition-colors"
-                  aria-label={social.label}
-                >
-                  <social.icon className="w-5 h-5" />
-                </a>
-              ))}
-            </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gold mb-4">
-              Company
-            </h3>
-            <ul className="space-y-3">
-              {footerLinks.company.map((link) => (
-                <li key={link.label}>
+          {/* Mobile Menu Button */}
+          <div className="flex lg:hidden items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-secondary transition-colors"
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? (
+                <Moon className="w-5 h-5" />
+              ) : (
+                <Sun className="w-5 h-5" />
+              )}
+            </button>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 rounded-lg hover:bg-secondary transition-colors"
+              aria-label="Toggle menu"
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden overflow-hidden bg-background/98 backdrop-blur-md"
+            >
+              <div className="py-4 space-y-2 border-t border-border">
+                {navLinks.map((link) => (
                   <Link
+                    key={link.href}
                     to={link.href}
-                    className="text-primary-foreground/70 hover:text-gold transition-colors text-sm"
+                    onClick={(event) => handleMobileNavClick(link.href, event)}
+                    className={cn(
+                      'block px-4 py-3 rounded-lg text-sm font-medium transition-colors',
+                      location.pathname === link.href
+                        ? 'bg-gold/10 text-gold'
+                        : 'hover:bg-secondary'
+                    )}
                   >
                     {link.label}
                   </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Services */}
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gold mb-4">
-              Services
-            </h3>
-            <ul className="space-y-3">
-              {footerLinks.services.map((link, index) => (
-                <li key={index}>
-                  <Link
-                    to={link.href}
-                    className="text-primary-foreground/70 hover:text-gold transition-colors text-sm"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-gold mb-4">
-              Contact Us
-            </h3>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" />
-                <span className="text-primary-foreground/70 text-sm">
-                  Oshiwara, Andheri West,
-                  <br />
-                  Mumbai, Maharashtra 400102
-                </span>
-              </li>
-              <li className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-gold flex-shrink-0" />
-                <a
-                  href="tel:+918741072815"
-                  className="text-primary-foreground/70 hover:text-gold transition-colors text-sm"
+                ))}
+                <Link
+                  to="/booking"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block mx-4 mt-4 text-center px-6 py-3 bg-gold text-background rounded-full font-medium text-sm hover:bg-gold-dark transition-colors"
                 >
-                  +91 8741072815
-                </a>
-              </li>
-              <li className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-gold flex-shrink-0" />
-                <a
-                  href="mailto:modplint2gmail.com"
-                  className="text-primary-foreground/70 hover:text-gold transition-colors text-sm"
-                >
-                  modplint@gmail.com
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Bar */}
-      <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-primary-foreground/50 text-sm">
-              © {new Date().getFullYear()} Modplint Interiors. All rights reserved.
-            </p>
-            <div className="flex items-center gap-6">
-              {footerLinks.legal.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className="text-primary-foreground/50 hover:text-gold transition-colors text-sm"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </footer>
+                  Book Consultation
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </nav>
+    </motion.header>
   )
 }
