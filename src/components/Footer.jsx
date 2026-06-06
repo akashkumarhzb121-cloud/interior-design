@@ -30,9 +30,9 @@ const footerLinks = {
 }
 
 const socialLinks = [
-  { href: '#', icon: Instagram, label: 'Instagram' },
-  { href: '#', icon: Facebook,  label: 'Facebook' },
-  { href: '#', icon: Linkedin,  label: 'LinkedIn' },
+  { href: 'https://www.instagram.com/modplintinteriors?utm_source=qr&igsh=MTludDVjMzEzMjc2Yw==', icon: Instagram, label: 'Instagram' },
+  { href: 'https://www.facebook.com/share/1EHZbEdcZt/', icon: Facebook,  label: 'Facebook' },
+  { href: 'https://www.linkedin.com/in/nandkishor-sharma-0a930a414?utm_source=share_via&utm_content=profile&utm_medium=member_android', icon: Linkedin,  label: 'LinkedIn' },
 ]
 
 export default function Footer() {
