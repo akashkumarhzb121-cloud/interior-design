@@ -255,6 +255,32 @@ export default function ManageProjects() {
     if (!files.length) return
     if (mediaRef.current) mediaRef.current.value = null // allow re-selecting same file
 
+    // ── Video size check ──────────────────────────────────────────────────
+    // Cloudinary free plan limit is 10 MB per file. Canvas cannot compress
+    // video, so we reject oversized videos upfront with a clear message.
+    const VIDEO_MAX_MB = 9
+    const oversizedVideos = files.filter(
+      f => f.type.startsWith('video/') && f.size > VIDEO_MAX_MB * 1024 * 1024
+    )
+    if (oversizedVideos.length) {
+      const names = oversizedVideos.map(f => `${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB)`).join(', ')
+      toast.error(
+        `Video too large: ${names}. Max size is ${VIDEO_MAX_MB} MB. Please trim or compress the video before uploading.`,
+        { duration: 6000 }
+      )
+      // Still allow the non-oversized files from the same selection to proceed
+      const validFiles = files.filter(f => {
+        if (f.type.startsWith('video/') && f.size > VIDEO_MAX_MB * 1024 * 1024) return false
+        return true
+      })
+      if (!validFiles.length) return
+      // Recurse with only valid files via a DataTransfer trick
+      const dt = new DataTransfer()
+      validFiles.forEach(f => dt.items.add(f))
+      const syntheticEvent = { target: { files: dt.files }, preventDefault: () => {} }
+      return handleMediaChange(syntheticEvent)
+    }
+
     // Add previews instantly so user sees thumbnails right away
     const initialPreviews = files.map(f => ({
       src:         URL.createObjectURL(f),
@@ -544,7 +570,7 @@ export default function ManageProjects() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Images &amp; Videos{' '}
-                <span className="text-muted-foreground text-xs font-normal">(unlimited · no size limit · auto-compressed)</span>
+                <span className="text-muted-foreground text-xs font-normal">(images auto-compressed · videos max 9 MB)</span>
               </label>
 
               <label className={cn('block', (submitting || isUploading) ? 'cursor-not-allowed opacity-60' : 'cursor-pointer')}>
@@ -554,7 +580,7 @@ export default function ManageProjects() {
                       <Upload className="w-5 h-5 text-gold" />
                     </div>
                     <p className="font-semibold text-foreground text-sm">Click to upload Images &amp; Videos</p>
-                    <p className="text-xs text-muted-foreground">JPG · PNG · WEBP · MP4 · MOV · AVI — Multiple files · No size limit</p>
+                    <p className="text-xs text-muted-foreground">JPG · PNG · WEBP · MP4 · MOV · AVI — Images auto-compressed · Videos max 9 MB</p>
                   </div>
                 </div>
                 <input
