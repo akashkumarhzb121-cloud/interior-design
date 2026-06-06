@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { projectsApi } from '@/api/services'
 import Modal from '@/components/ui/Modal'
 import { Input, Textarea } from '@/components/ui/Input'
-import { X, Film, Image as ImageIcon, Upload, Star } from 'lucide-react'
+import { X, Film, Image as ImageIcon, Upload, Star, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const CATEGORIES = ['Residential', 'Commercial', 'Office', 'Hospitality', 'Retail', 'Other']
@@ -17,20 +17,28 @@ function MediaPreviewStrip({ previews, onRemove }) {
     <div className="mt-3 flex flex-wrap gap-2">
       {previews.map((p, i) => (
         <div key={i} className="relative group w-24 h-20 rounded-lg overflow-hidden bg-muted border border-border">
-          {/* Use <video> for videos, <img> for images */}
           {p.type === 'video' ? (
             <video src={p.src} className="w-full h-full object-cover" muted />
           ) : (
             <img src={p.src} alt={p.name || ''} className="w-full h-full object-cover" />
           )}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+          {/* Upload progress overlay */}
+          {p.uploading && (
+            <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
+              <Loader2 className="w-4 h-4 text-white animate-spin" />
+              {p.progress != null && (
+                <span className="text-white text-[10px] mt-1">{p.progress}%</span>
+              )}
+            </div>
+          )}
           {/* Type badge */}
           <span className="absolute top-1 left-1 bg-black/60 text-white rounded px-1 py-0.5 text-[10px] flex items-center gap-0.5">
             {p.type === 'video' ? <Film className="w-2.5 h-2.5" /> : <ImageIcon className="w-2.5 h-2.5" />}
             {p.type}
           </span>
-          {/* Remove button */}
-          {onRemove && (
+          {/* Remove button — only shown when not uploading */}
+          {onRemove && !p.uploading && (
             <button
               type="button"
               onClick={() => onRemove(i)}
@@ -45,12 +53,70 @@ function MediaPreviewStrip({ previews, onRemove }) {
   )
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// uploadToCloudinaryDirect
+//
+// Uploads a single File object directly from the browser to Cloudinary using
+// a signed signature obtained from our backend.  Returns { url, publicId,
+// resourceType } which we then send to the backend as JSON.
+//
+// WHY: Vercel Hobby has a 4.5 MB request-body limit.  Files go directly to
+// Cloudinary (not through Vercel) so the limit is never hit.
+// ─────────────────────────────────────────────────────────────────────────────
+async function uploadToCloudinaryDirect(file, signature, timestamp, folder, cloudName, apiKey, onProgress) {
+  const formData = new FormData()
+  formData.append('file',      file)
+  formData.append('api_key',   apiKey)
+  formData.append('timestamp', timestamp)
+  formData.append('signature', signature)
+  formData.append('folder',    folder)
+  // resource_type=auto lets Cloudinary handle both images and videos correctly
+  // Note: resource_type must NOT be included in the signed params
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+
+    // Progress tracking
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100))
+      }
+    })
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const result = JSON.parse(xhr.responseText)
+        resolve({
+          url:          result.secure_url,
+          publicId:     result.public_id,
+          resourceType: result.resource_type, // 'image' | 'video'
+        })
+      } else {
+        let errMsg = `Cloudinary upload failed (${xhr.status})`
+        try {
+          const errData = JSON.parse(xhr.responseText)
+          if (errData?.error?.message) errMsg = errData.error.message
+        } catch {}
+        reject(new Error(errMsg))
+      }
+    })
+
+    xhr.addEventListener('error', () => reject(new Error('Network error during upload')))
+    xhr.addEventListener('abort', () => reject(new Error('Upload aborted')))
+
+    // Use 'auto' resource_type endpoint so Cloudinary accepts both images & videos
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`)
+    xhr.send(formData)
+  })
+}
+
 export default function ManageProjects() {
   const [projects, setProjects] = useState([])
   const [loading,  setLoading]  = useState(true)
   const [deleting, setDeleting] = useState(null)
   const [isModalOpen,     setIsModalOpen]     = useState(false)
   const [editingProject,  setEditingProject]  = useState(null)
+  const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({
     title: '', category: 'Residential', location: '',
     budget: '', completionDate: '', description: '', featured: false,
@@ -106,13 +172,14 @@ export default function ManageProjects() {
       featured:       project.featured       || false,
     })
 
-    // ── FIX: use img.resourceType to detect videos; don't hardcode 'image' ──
     const existing = (project.images || []).map(img => ({
-      src:          typeof img === 'string' ? img : img.url,
-      type:         (typeof img === 'object' && img.resourceType) ? img.resourceType : 'image',
-      name:         '',
-      existing:     true,
-      publicId:     typeof img === 'string' ? null : img.publicId,
+      src:      typeof img === 'string' ? img : img.url,
+      type:     (typeof img === 'object' && img.resourceType) ? img.resourceType : 'image',
+      name:     '',
+      existing: true,
+      publicId: typeof img === 'string' ? null : img.publicId,
+      // Keep the full image object so we can pass it back to the backend unchanged
+      imageObj: typeof img === 'object' ? img : { url: img, publicId: null, resourceType: 'image' },
     }))
     setMediaPreviews(existing)
     setIsModalOpen(true)
@@ -132,53 +199,110 @@ export default function ManageProjects() {
 
   const removePreview = (idx) => setMediaPreviews(prev => prev.filter((_, i) => i !== idx))
 
+  // ── Main submit — uses direct Cloudinary upload to bypass Vercel 4.5 MB limit
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.title.trim() || form.title.trim().length < 3) { toast.error('Title is required (min 3 chars).'); return }
     if (!form.description.trim()) { toast.error('Description is required.'); return }
 
+    setSubmitting(true)
+    const toastId = toast.loading('Preparing upload…')
+
     try {
-      const data = new FormData()
-      data.append('title',       form.title.trim())
-      data.append('category',    form.category)
-      data.append('location',    form.location)
-      data.append('description', form.description.trim())
-      data.append('featured',    form.featured ? 'true' : 'false')
-      if (form.budget)         data.append('budget',         form.budget)
-      if (form.completionDate) data.append('completionDate', form.completionDate)
+      // ── Step 1: get Cloudinary upload signature from our backend ──────────
+      const sigRes = await projectsApi.getUploadSignature()
+      const { signature, timestamp, folder, cloudName, apiKey } = sigRes.data?.data || sigRes.data
 
-      // New files (not existing DB files)
-      for (const p of mediaPreviews.filter(p => p.file)) data.append('images', p.file)
+      // ── Step 2: upload each NEW file directly to Cloudinary ───────────────
+      const newFilePreviews = mediaPreviews.filter(p => p.file)
+      const uploadedImages  = []
 
-      // Tell backend which previously-saved files were removed
+      for (let i = 0; i < newFilePreviews.length; i++) {
+        const preview = newFilePreviews[i]
+        const fileIdx = mediaPreviews.findIndex(p => p === preview)
+
+        // Mark this thumbnail as "uploading"
+        setMediaPreviews(prev => prev.map((p, idx) =>
+          idx === fileIdx ? { ...p, uploading: true, progress: 0 } : p
+        ))
+
+        toast.loading(`Uploading file ${i + 1} of ${newFilePreviews.length}…`, { id: toastId })
+
+        const result = await uploadToCloudinaryDirect(
+          preview.file,
+          signature, timestamp, folder, cloudName, apiKey,
+          (pct) => {
+            setMediaPreviews(prev => prev.map((p, idx) =>
+              idx === fileIdx ? { ...p, progress: pct } : p
+            ))
+          }
+        )
+
+        uploadedImages.push(result)
+
+        // Mark done
+        setMediaPreviews(prev => prev.map((p, idx) =>
+          idx === fileIdx ? { ...p, uploading: false, progress: null } : p
+        ))
+      }
+
+      // ── Step 3: send metadata + Cloudinary URLs to our backend (JSON only) ─
+      toast.loading('Saving project…', { id: toastId })
+
+      const metadata = {
+        title:       form.title.trim(),
+        category:    form.category,
+        location:    form.location,
+        description: form.description.trim(),
+        featured:    form.featured,
+        ...(form.budget         && { budget:         form.budget }),
+        ...(form.completionDate && { completionDate: form.completionDate }),
+      }
+
       if (editingProject) {
-        const keptPublicIds  = mediaPreviews.filter(p => p.existing && p.publicId).map(p => p.publicId)
+        // Existing images the admin kept (not removed)
+        const keepImages = mediaPreviews
+          .filter(p => p.existing)
+          .map(p => p.imageObj)
+
+        // Removed public IDs
+        const keptPublicIds  = keepImages.map(img => img.publicId).filter(Boolean)
         const allOriginalIds = (editingProject.images || []).map(img => img.publicId).filter(Boolean)
-        for (const id of allOriginalIds.filter(id => !keptPublicIds.includes(id))) {
-          data.append('removeImages', id)
-        }
+        const removeImages   = allOriginalIds.filter(id => !keptPublicIds.includes(id))
+
+        await projectsApi.updateWithUrls(editingProject._id, {
+          ...metadata,
+          images:       uploadedImages,
+          keepImages,
+          removeImages,
+        })
+        toast.success('Project updated.', { id: toastId })
+      } else {
+        await projectsApi.createWithUrls({
+          ...metadata,
+          images: uploadedImages,
+        })
+        toast.success('Project created.', { id: toastId })
       }
 
-      if (editingProject) {
-        await projectsApi.update(editingProject._id, data)
-        toast.success('Project updated.')
-      } else {
-        await projectsApi.create(data)
-        toast.success('Project created.')
-      }
       setIsModalOpen(false)
       setMediaPreviews([])
       await loadProjects()
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Failed to save project.')
+      const msg = error?.response?.data?.message || error?.message || 'Failed to save project.'
+      toast.error(msg, { id: toastId })
+    } finally {
+      setSubmitting(false)
     }
   }
 
-  // ── Helper: first IMAGE url for table preview (skip videos) ──────────────
+  // Helper: first IMAGE url for table preview (skip videos)
   const getPreviewUrl = (project) => {
     const firstImage = (project.images || []).find(img => !img.resourceType || img.resourceType === 'image')
     return firstImage?.url || null
   }
+
+  const isUploading = mediaPreviews.some(p => p.uploading)
 
   return (
     <Section className="bg-background min-h-[calc(100vh-4rem)]">
@@ -210,10 +334,10 @@ export default function ManageProjects() {
                 <tr><td colSpan="6" className="px-6 py-10 text-center text-muted-foreground">Loading projects…</td></tr>
               ) : projects.length > 0 ? (
                 projects.map((project) => {
-                  const previewUrl   = getPreviewUrl(project)
-                  const totalFiles   = project.images?.length || 0
-                  const videoCount   = (project.images || []).filter(i => i.resourceType === 'video').length
-                  const imageCount   = totalFiles - videoCount
+                  const previewUrl = getPreviewUrl(project)
+                  const totalFiles = project.images?.length || 0
+                  const videoCount = (project.images || []).filter(i => i.resourceType === 'video').length
+                  const imageCount = totalFiles - videoCount
 
                   return (
                     <tr key={project._id}>
@@ -278,7 +402,7 @@ export default function ManageProjects() {
         {/* ── Modal ── */}
         <Modal
           isOpen={isModalOpen}
-          onClose={() => { setIsModalOpen(false); setMediaPreviews([]) }}
+          onClose={() => { if (!submitting && !isUploading) { setIsModalOpen(false); setMediaPreviews([]) } }}
           title={editingProject ? 'Edit Project' : 'Add Project'}
           size="lg"
         >
@@ -307,7 +431,6 @@ export default function ManageProjects() {
                 value={form.location}
                 onChange={(e) => setForm(s => ({ ...s, location: e.target.value }))}
               />
-
             </div>
 
             <Input
@@ -340,7 +463,7 @@ export default function ManageProjects() {
                 <span className="text-muted-foreground text-xs font-normal">(unlimited · no size limit)</span>
               </label>
 
-              <label className="block cursor-pointer">
+              <label className={cn('block', (submitting || isUploading) ? 'cursor-not-allowed opacity-60' : 'cursor-pointer')}>
                 <div className="border-2 border-dashed border-gold/60 bg-gold/5 hover:bg-gold/10 hover:border-gold rounded-xl p-6 text-center transition-all duration-200 group">
                   <div className="flex flex-col items-center gap-2">
                     <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -354,11 +477,12 @@ export default function ManageProjects() {
                   ref={mediaRef}
                   type="file" multiple accept="image/*,video/*"
                   className="hidden"
+                  disabled={submitting || isUploading}
                   onChange={handleMediaChange}
                 />
               </label>
 
-              <MediaPreviewStrip previews={mediaPreviews} onRemove={removePreview} />
+              <MediaPreviewStrip previews={mediaPreviews} onRemove={submitting || isUploading ? null : removePreview} />
 
               {mediaPreviews.length > 0 && (
                 <p className="text-xs text-muted-foreground mt-2">
@@ -368,11 +492,17 @@ export default function ManageProjects() {
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2">
-              <Button variant="ghost" type="button" onClick={() => { setIsModalOpen(false); setMediaPreviews([]) }}>
+              <Button
+                variant="ghost" type="button"
+                disabled={submitting || isUploading}
+                onClick={() => { setIsModalOpen(false); setMediaPreviews([]) }}
+              >
                 Cancel
               </Button>
-              <Button type="submit" variant="gold">
-                {editingProject ? 'Update Project' : 'Create Project'}
+              <Button type="submit" variant="gold" disabled={submitting || isUploading}>
+                {submitting
+                  ? (isUploading ? 'Uploading…' : 'Saving…')
+                  : editingProject ? 'Update Project' : 'Create Project'}
               </Button>
             </div>
           </form>
