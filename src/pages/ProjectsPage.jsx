@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowRight, MapPin, Play, SlidersHorizontal, X } from 'lucide-react'
+import { ArrowRight, MapPin, Play, SlidersHorizontal, X, Images, Sparkles } from 'lucide-react'
 import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { ProjectCardSkeleton } from '@/components/ui/Skeleton'
@@ -176,6 +176,55 @@ export default function ProjectsPage() {
                 {filtered.map((project, index) => (
                   <ProjectCard key={project._id} project={project} index={index} />
                 ))}
+
+                {/* ── See All Works card — always shown at end of grid ── */}
+                <motion.div
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(filtered.length * 0.05, 0.4) }}
+                >
+                  <Link to="/gallery" className="block h-full group">
+                    <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-charcoal flex flex-col items-center justify-center text-center px-8 border border-gold/20 hover:border-gold/60 transition-all duration-500">
+                      {/* Animated background shimmer */}
+                      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gold/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-br from-charcoal via-charcoal to-black" />
+
+                      {/* Decorative corner lines */}
+                      <div className="absolute top-4 left-4 w-6 h-6 border-t border-l border-gold/30 group-hover:border-gold/70 transition-colors duration-300" />
+                      <div className="absolute top-4 right-4 w-6 h-6 border-t border-r border-gold/30 group-hover:border-gold/70 transition-colors duration-300" />
+                      <div className="absolute bottom-4 left-4 w-6 h-6 border-b border-l border-gold/30 group-hover:border-gold/70 transition-colors duration-300" />
+                      <div className="absolute bottom-4 right-4 w-6 h-6 border-b border-r border-gold/30 group-hover:border-gold/70 transition-colors duration-300" />
+
+                      {/* Content */}
+                      <div className="relative z-10 flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 rounded-2xl bg-gold/10 border border-gold/30 flex items-center justify-center group-hover:bg-gold/20 group-hover:scale-110 transition-all duration-300">
+                          <Images className="w-7 h-7 text-gold" />
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-center gap-1.5 mb-2">
+                            <Sparkles className="w-3.5 h-3.5 text-gold/70" />
+                            <span className="text-gold/70 text-xs tracking-widest uppercase font-medium">Full Collection</span>
+                            <Sparkles className="w-3.5 h-3.5 text-gold/70" />
+                          </div>
+                          <h3 className="text-2xl font-serif font-bold text-white group-hover:text-gold transition-colors duration-300">
+                            Explore Our<br />Complete Works
+                          </h3>
+                          <p className="mt-2 text-white/50 text-sm leading-relaxed">
+                            Every photograph, every detail —<br />the full visual story in one place.
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-1 text-gold text-sm font-medium">
+                          <span>View Full Gallery</span>
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+
               </div>
             </AnimatePresence>
           )}
