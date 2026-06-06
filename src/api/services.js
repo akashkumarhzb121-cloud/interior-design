@@ -3,13 +3,25 @@ import api from './axios'
 // ─── IMPORTANT ──────────────────────────────────────────────────────────────
 // When sending FormData with axios, do NOT manually set Content-Type.
 // Axios auto-sets 'multipart/form-data; boundary=...' with the correct boundary.
-// Manually setting it strips the boundary and breaks the request (multer returns 400).
+// Manually setting it strips the boundary and breaks the request (multer → 400).
 // ────────────────────────────────────────────────────────────────────────────
 
 export const projectsApi = {
   getAll:  ()         => api.get('/projects'),
   getById: (id)       => api.get(`/projects/${id}`),
-  create:  (data)     => api.post('/projects', data),   // FormData — no Content-Type header
+
+  // ── Direct-upload flow (bypasses Vercel 4.5 MB limit) ───────────────────
+  // Step 1: get a signed Cloudinary upload signature from the backend
+  getUploadSignature: () => api.get('/projects/upload-signature'),
+
+  // Step 2a: create project — send only Cloudinary URLs (JSON, no files)
+  createWithUrls: (data) => api.post('/projects/save-urls', data),
+
+  // Step 2b: update project — send only Cloudinary URLs (JSON, no files)
+  updateWithUrls: (id, data) => api.put(`/projects/${id}/save-urls`, data),
+
+  // ── Legacy routes (still work locally, hit Vercel limit for large files) ─
+  create:  (data)     => api.post('/projects', data),   // FormData
   update:  (id, data) => api.put(`/projects/${id}`, data),
   delete:  (id)       => api.delete(`/projects/${id}`),
 }
@@ -23,13 +35,8 @@ export const servicesApi = {
 
 export const testimonialsApi = {
   getAll: () => api.get('/testimonials'),
-
-  // Public submit — isApproved:false, pending admin review
   create: (data) => api.post('/testimonials', data),
-
-  // Admin create — isApproved:true, published immediately
   createByAdmin: (data) => api.post('/testimonials/admin-create', data),
-
   update: (id, data) => api.put(`/testimonials/${id}`, data),
   delete: (id)       => api.delete(`/testimonials/${id}`),
 }
