@@ -10,6 +10,68 @@ import { cn } from '@/lib/utils'
 
 const CATEGORIES = ['Residential', 'Commercial', 'Office', 'Hospitality', 'Retail', 'Other']
 
+// ─────────────────────────────────────────────────────────────────────────────
+// compressImage
+//
+// Compresses an image File in the browser using Canvas before uploading.
+// Cloudinary free plan has a 10 MB per-file limit. Phone camera photos are
+// often 10–20 MB. This shrinks them to under 8 MB while keeping good quality.
+//
+// Videos are returned as-is (canvas can't compress video).
+// ─────────────────────────────────────────────────────────────────────────────
+function compressImage(file, { maxWidth = 2400, maxHeight = 2400, quality = 0.82, maxSizeMB = 8 } = {}) {
+  // Skip non-images — return the file unchanged
+  if (!file.type.startsWith('image/')) return Promise.resolve(file)
+  // Skip if already small enough
+  if (file.size <= maxSizeMB * 1024 * 1024) return Promise.resolve(file)
+
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+      let { width, height } = img
+
+      // Scale down proportionally if needed
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height)
+        width  = Math.round(width  * ratio)
+        height = Math.round(height * ratio)
+      }
+
+      const canvas = document.createElement('canvas')
+      canvas.width  = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+
+      // Use jpeg for compression (even for png — saves 60–80% size)
+      // Keep original name but change extension hint via File type
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { reject(new Error('Canvas compression failed')); return }
+          const compressed = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          })
+          resolve(compressed)
+        },
+        'image/jpeg',
+        quality,
+      )
+    }
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      // If we can't load/compress, just use original
+      resolve(file)
+    }
+
+    img.src = objectUrl
+  })
+}
+
 // ── Preview strip shown inside the modal ────────────────────────────────────
 function MediaPreviewStrip({ previews, onRemove }) {
   if (!previews.length) return null
@@ -32,13 +94,20 @@ function MediaPreviewStrip({ previews, onRemove }) {
               )}
             </div>
           )}
+          {/* Compressing overlay */}
+          {p.compressing && (
+            <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
+              <Loader2 className="w-4 h-4 text-white animate-spin" />
+              <span className="text-white text-[10px] mt-1">Compressing…</span>
+            </div>
+          )}
           {/* Type badge */}
           <span className="absolute top-1 left-1 bg-black/60 text-white rounded px-1 py-0.5 text-[10px] flex items-center gap-0.5">
             {p.type === 'video' ? <Film className="w-2.5 h-2.5" /> : <ImageIcon className="w-2.5 h-2.5" />}
             {p.type}
           </span>
-          {/* Remove button — only shown when not uploading */}
-          {onRemove && !p.uploading && (
+          {/* Remove button */}
+          {onRemove && !p.uploading && !p.compressing && (
             <button
               type="button"
               onClick={() => onRemove(i)}
@@ -56,12 +125,11 @@ function MediaPreviewStrip({ previews, onRemove }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // uploadToCloudinaryDirect
 //
-// Uploads a single File object directly from the browser to Cloudinary using
-// a signed signature obtained from our backend.  Returns { url, publicId,
-// resourceType } which we then send to the backend as JSON.
+// Uploads a single File directly from the browser to Cloudinary using a
+// signed signature from our backend. Returns { url, publicId, resourceType }.
 //
-// WHY: Vercel Hobby has a 4.5 MB request-body limit.  Files go directly to
-// Cloudinary (not through Vercel) so the limit is never hit.
+// WHY: Vercel Hobby has a 4.5 MB request-body limit. Files go straight to
+// Cloudinary — they never touch Vercel — so the limit is never hit.
 // ─────────────────────────────────────────────────────────────────────────────
 async function uploadToCloudinaryDirect(file, signature, timestamp, folder, cloudName, apiKey, onProgress) {
   const formData = new FormData()
@@ -70,13 +138,11 @@ async function uploadToCloudinaryDirect(file, signature, timestamp, folder, clou
   formData.append('timestamp', timestamp)
   formData.append('signature', signature)
   formData.append('folder',    folder)
-  // resource_type=auto lets Cloudinary handle both images and videos correctly
-  // Note: resource_type must NOT be included in the signed params
+  // resource_type must NOT be in signed params — it goes in the URL only
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
 
-    // Progress tracking
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable && onProgress) {
         onProgress(Math.round((e.loaded / e.total) * 100))
@@ -89,7 +155,7 @@ async function uploadToCloudinaryDirect(file, signature, timestamp, folder, clou
         resolve({
           url:          result.secure_url,
           publicId:     result.public_id,
-          resourceType: result.resource_type, // 'image' | 'video'
+          resourceType: result.resource_type,
         })
       } else {
         let errMsg = `Cloudinary upload failed (${xhr.status})`
@@ -104,18 +170,18 @@ async function uploadToCloudinaryDirect(file, signature, timestamp, folder, clou
     xhr.addEventListener('error', () => reject(new Error('Network error during upload')))
     xhr.addEventListener('abort', () => reject(new Error('Upload aborted')))
 
-    // Use 'auto' resource_type endpoint so Cloudinary accepts both images & videos
+    // 'auto' resource_type handles both images and videos
     xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`)
     xhr.send(formData)
   })
 }
 
 export default function ManageProjects() {
-  const [projects, setProjects] = useState([])
-  const [loading,  setLoading]  = useState(true)
-  const [deleting, setDeleting] = useState(null)
-  const [isModalOpen,     setIsModalOpen]     = useState(false)
-  const [editingProject,  setEditingProject]  = useState(null)
+  const [projects,  setProjects]  = useState([])
+  const [loading,   setLoading]   = useState(true)
+  const [deleting,  setDeleting]  = useState(null)
+  const [isModalOpen,    setIsModalOpen]    = useState(false)
+  const [editingProject, setEditingProject] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [form, setForm] = useState({
     title: '', category: 'Residential', location: '',
@@ -171,49 +237,90 @@ export default function ManageProjects() {
       description:    project.description    || '',
       featured:       project.featured       || false,
     })
-
     const existing = (project.images || []).map(img => ({
       src:      typeof img === 'string' ? img : img.url,
       type:     (typeof img === 'object' && img.resourceType) ? img.resourceType : 'image',
       name:     '',
       existing: true,
       publicId: typeof img === 'string' ? null : img.publicId,
-      // Keep the full image object so we can pass it back to the backend unchanged
       imageObj: typeof img === 'object' ? img : { url: img, publicId: null, resourceType: 'image' },
     }))
     setMediaPreviews(existing)
     setIsModalOpen(true)
   }
 
-  const handleMediaChange = (e) => {
+  // ── When files are selected: add previews immediately, compress in background
+  const handleMediaChange = async (e) => {
     const files = Array.from(e.target.files || [])
     if (!files.length) return
-    const newPreviews = files.map(f => ({
-      src:  URL.createObjectURL(f),
-      type: f.type.startsWith('video/') ? 'video' : 'image',
-      name: f.name,
-      file: f,
+    if (mediaRef.current) mediaRef.current.value = null // allow re-selecting same file
+
+    // Add previews instantly so user sees thumbnails right away
+    const initialPreviews = files.map(f => ({
+      src:         URL.createObjectURL(f),
+      type:        f.type.startsWith('video/') ? 'video' : 'image',
+      name:        f.name,
+      file:        f,           // original — will be replaced with compressed below
+      compressing: f.type.startsWith('image/') && f.size > 8 * 1024 * 1024,
     }))
-    setMediaPreviews(prev => [...prev, ...newPreviews])
+    setMediaPreviews(prev => [...prev, ...initialPreviews])
+
+    // Compress large images in the background, update the file reference when done
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      if (!file.type.startsWith('image/') || file.size <= 8 * 1024 * 1024) continue
+
+      try {
+        const compressed = await compressImage(file)
+        const previewSrc = URL.createObjectURL(compressed)
+
+        setMediaPreviews(prev => {
+          // Find the preview we added for this file (match by original file reference)
+          const targetIdx = prev.findIndex(p => p.file === file)
+          if (targetIdx === -1) return prev
+          const updated = [...prev]
+          updated[targetIdx] = {
+            ...updated[targetIdx],
+            file:        compressed,
+            src:         previewSrc,
+            compressing: false,
+          }
+          return updated
+        })
+      } catch {
+        // Compression failed — just use original, Cloudinary will reject if too big
+        setMediaPreviews(prev => {
+          const targetIdx = prev.findIndex(p => p.file === file)
+          if (targetIdx === -1) return prev
+          const updated = [...prev]
+          updated[targetIdx] = { ...updated[targetIdx], compressing: false }
+          return updated
+        })
+      }
+    }
   }
 
   const removePreview = (idx) => setMediaPreviews(prev => prev.filter((_, i) => i !== idx))
 
-  // ── Main submit — uses direct Cloudinary upload to bypass Vercel 4.5 MB limit
+  const isCompressing = mediaPreviews.some(p => p.compressing)
+  const isUploading   = mediaPreviews.some(p => p.uploading)
+
+  // ── Main submit ──────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.title.trim() || form.title.trim().length < 3) { toast.error('Title is required (min 3 chars).'); return }
     if (!form.description.trim()) { toast.error('Description is required.'); return }
+    if (isCompressing) { toast.error('Please wait — images are still being compressed.'); return }
 
     setSubmitting(true)
     const toastId = toast.loading('Preparing upload…')
 
     try {
-      // ── Step 1: get Cloudinary upload signature from our backend ──────────
+      // Step 1 — get a signed Cloudinary upload signature from our backend
       const sigRes = await projectsApi.getUploadSignature()
       const { signature, timestamp, folder, cloudName, apiKey } = sigRes.data?.data || sigRes.data
 
-      // ── Step 2: upload each NEW file directly to Cloudinary ───────────────
+      // Step 2 — upload each NEW file directly to Cloudinary (never touches Vercel)
       const newFilePreviews = mediaPreviews.filter(p => p.file)
       const uploadedImages  = []
 
@@ -221,7 +328,6 @@ export default function ManageProjects() {
         const preview = newFilePreviews[i]
         const fileIdx = mediaPreviews.findIndex(p => p === preview)
 
-        // Mark this thumbnail as "uploading"
         setMediaPreviews(prev => prev.map((p, idx) =>
           idx === fileIdx ? { ...p, uploading: true, progress: 0 } : p
         ))
@@ -240,13 +346,12 @@ export default function ManageProjects() {
 
         uploadedImages.push(result)
 
-        // Mark done
         setMediaPreviews(prev => prev.map((p, idx) =>
           idx === fileIdx ? { ...p, uploading: false, progress: null } : p
         ))
       }
 
-      // ── Step 3: send metadata + Cloudinary URLs to our backend (JSON only) ─
+      // Step 3 — send only JSON (metadata + Cloudinary URLs) to our backend
       toast.loading('Saving project…', { id: toastId })
 
       const metadata = {
@@ -260,28 +365,17 @@ export default function ManageProjects() {
       }
 
       if (editingProject) {
-        // Existing images the admin kept (not removed)
-        const keepImages = mediaPreviews
-          .filter(p => p.existing)
-          .map(p => p.imageObj)
-
-        // Removed public IDs
+        const keepImages     = mediaPreviews.filter(p => p.existing).map(p => p.imageObj)
         const keptPublicIds  = keepImages.map(img => img.publicId).filter(Boolean)
         const allOriginalIds = (editingProject.images || []).map(img => img.publicId).filter(Boolean)
         const removeImages   = allOriginalIds.filter(id => !keptPublicIds.includes(id))
 
         await projectsApi.updateWithUrls(editingProject._id, {
-          ...metadata,
-          images:       uploadedImages,
-          keepImages,
-          removeImages,
+          ...metadata, images: uploadedImages, keepImages, removeImages,
         })
         toast.success('Project updated.', { id: toastId })
       } else {
-        await projectsApi.createWithUrls({
-          ...metadata,
-          images: uploadedImages,
-        })
+        await projectsApi.createWithUrls({ ...metadata, images: uploadedImages })
         toast.success('Project created.', { id: toastId })
       }
 
@@ -296,20 +390,17 @@ export default function ManageProjects() {
     }
   }
 
-  // Helper: first IMAGE url for table preview (skip videos)
   const getPreviewUrl = (project) => {
     const firstImage = (project.images || []).find(img => !img.resourceType || img.resourceType === 'image')
     return firstImage?.url || null
   }
-
-  const isUploading = mediaPreviews.some(p => p.uploading)
 
   return (
     <Section className="bg-background min-h-[calc(100vh-4rem)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeader
           title="Manage Projects"
-          description="Add, edit, and remove portfolio projects. Upload unlimited images and videos."
+          description="Add, edit, and remove portfolio projects. Images are auto-compressed before upload."
         />
 
         <div className="mt-8 overflow-x-auto rounded-3xl border border-border bg-card">
@@ -338,7 +429,6 @@ export default function ManageProjects() {
                   const totalFiles = project.images?.length || 0
                   const videoCount = (project.images || []).filter(i => i.resourceType === 'video').length
                   const imageCount = totalFiles - videoCount
-
                   return (
                     <tr key={project._id}>
                       <td className="px-6 py-4">
@@ -358,9 +448,7 @@ export default function ManageProjects() {
                         {totalFiles > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {imageCount > 0 && (
-                              <span className="bg-gold/20 text-gold text-xs px-2 py-0.5 rounded-full">
-                                {imageCount} img
-                              </span>
+                              <span className="bg-gold/20 text-gold text-xs px-2 py-0.5 rounded-full">{imageCount} img</span>
                             )}
                             {videoCount > 0 && (
                               <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-0.5">
@@ -380,11 +468,9 @@ export default function ManageProjects() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <Button size="sm" onClick={() => openEdit(project)}>Edit</Button>
-                          <Button
-                            variant="destructive" size="sm"
+                          <Button variant="destructive" size="sm"
                             onClick={() => handleDelete(project._id)}
-                            disabled={deleting === project._id}
-                          >
+                            disabled={deleting === project._id}>
                             {deleting === project._id ? 'Deleting…' : 'Delete'}
                           </Button>
                         </div>
@@ -402,7 +488,7 @@ export default function ManageProjects() {
         {/* ── Modal ── */}
         <Modal
           isOpen={isModalOpen}
-          onClose={() => { if (!submitting && !isUploading) { setIsModalOpen(false); setMediaPreviews([]) } }}
+          onClose={() => { if (!submitting && !isUploading && !isCompressing) { setIsModalOpen(false); setMediaPreviews([]) } }}
           title={editingProject ? 'Edit Project' : 'Add Project'}
           size="lg"
         >
@@ -425,13 +511,11 @@ export default function ManageProjects() {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                id="location" label="Location"
-                value={form.location}
-                onChange={(e) => setForm(s => ({ ...s, location: e.target.value }))}
-              />
-            </div>
+            <Input
+              id="location" label="Location"
+              value={form.location}
+              onChange={(e) => setForm(s => ({ ...s, location: e.target.value }))}
+            />
 
             <Input
               id="completionDate" label="Completion Date" type="date"
@@ -460,7 +544,7 @@ export default function ManageProjects() {
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Images &amp; Videos{' '}
-                <span className="text-muted-foreground text-xs font-normal">(unlimited · no size limit)</span>
+                <span className="text-muted-foreground text-xs font-normal">(unlimited · no size limit · auto-compressed)</span>
               </label>
 
               <label className={cn('block', (submitting || isUploading) ? 'cursor-not-allowed opacity-60' : 'cursor-pointer')}>
@@ -482,11 +566,15 @@ export default function ManageProjects() {
                 />
               </label>
 
-              <MediaPreviewStrip previews={mediaPreviews} onRemove={submitting || isUploading ? null : removePreview} />
+              <MediaPreviewStrip
+                previews={mediaPreviews}
+                onRemove={submitting || isUploading ? null : removePreview}
+              />
 
               {mediaPreviews.length > 0 && (
                 <p className="text-xs text-muted-foreground mt-2">
                   {mediaPreviews.length} file{mediaPreviews.length !== 1 ? 's' : ''} — hover to remove
+                  {isCompressing && <span className="text-gold ml-2">· Compressing large images…</span>}
                 </p>
               )}
             </div>
@@ -494,15 +582,17 @@ export default function ManageProjects() {
             <div className="flex items-center justify-end gap-2 pt-2">
               <Button
                 variant="ghost" type="button"
-                disabled={submitting || isUploading}
+                disabled={submitting || isUploading || isCompressing}
                 onClick={() => { setIsModalOpen(false); setMediaPreviews([]) }}
               >
                 Cancel
               </Button>
-              <Button type="submit" variant="gold" disabled={submitting || isUploading}>
-                {submitting
-                  ? (isUploading ? 'Uploading…' : 'Saving…')
-                  : editingProject ? 'Update Project' : 'Create Project'}
+              <Button type="submit" variant="gold" disabled={submitting || isUploading || isCompressing}>
+                {isCompressing
+                  ? 'Compressing…'
+                  : submitting
+                    ? (isUploading ? 'Uploading…' : 'Saving…')
+                    : editingProject ? 'Update Project' : 'Create Project'}
               </Button>
             </div>
           </form>
