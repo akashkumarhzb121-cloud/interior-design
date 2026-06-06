@@ -9,6 +9,7 @@ import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
+import GalleryPage from './pages/GalleryPage';
 import ServicesPage from './pages/ServicesPage';
 import TestimonialsPage from './pages/TestimonialsPage';
 import ContactPage from './pages/ContactPage';
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="about" element={<AboutPage />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="projects/:id" element={<ProjectDetailPage />} />
+          <Route path="gallery" element={<GalleryPage />} />
           <Route path="services" element={<ServicesPage />} />
           <Route path="testimonials" element={<TestimonialsPage />} />
           <Route path="contact" element={<ContactPage />} />
