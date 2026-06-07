@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, MapPin, Calendar, Maximize, ChevronLeft, Chevron
 import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
+import Modal from '@/components/ui/Modal'
 import { projectsApi } from '@/api/services'
 
 import 'swiper/css'
@@ -14,6 +15,7 @@ import 'swiper/css/navigation'
 import 'swiper/css/thumbs'
 import 'swiper/css/pagination'
 
+// Normalise each entry from the images[] array into { url, resourceType }
 function normaliseMedia(img) {
   if (!img) return null
   const url = typeof img === 'string' ? img : img.url
@@ -27,114 +29,6 @@ const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1200&q=80',
   'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&q=80',
 ]
-
-// ─── Standalone lightbox overlay ─
-function Lightbox({ items, startIndex, onClose }) {
-  const [current, setCurrent] = useState(startIndex)
-  const total = items.length
-
-  useEffect(() => {
-    document.body.style.overflow = 'hidden'
-    const onKey = (e) => {
-      if (e.key === 'Escape') onClose()
-      if (e.key === 'ArrowLeft') setCurrent(i => (i - 1 + total) % total)
-      if (e.key === 'ArrowRight') setCurrent(i => (i + 1) % total)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => {
-      document.body.style.overflow = ''
-      window.removeEventListener('keydown', onKey)
-    }
-  }, [onClose, total])
-
-  const item = items[current]
-
-  return (
-    <div
-      className="fixed inset-0 z-[9999] bg-black/95 flex flex-col"
-      onClick={onClose}
-    >
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3" onClick={e => e.stopPropagation()}>
-        <span className="text-white/50 text-sm">{current + 1} / {total}</span>
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onClose(); }}
-          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
-        >
-          <X className="w-5 h-5 text-white" />
-        </button>
-      </div>
-
-      {/* Media */}
-      <div
-        className="flex-1 flex items-center justify-center relative min-h-0 px-14"
-        onClick={e => e.stopPropagation()}
-      >
-        {total > 1 && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setCurrent(i => (i - 1 + total) % total); }}
-            className="absolute left-2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
-          >
-            <ChevronLeft className="w-6 h-6 text-white" />
-          </button>
-        )}
-
-        {item.resourceType === 'video' ? (
-          <video
-            src={item.url}
-            controls autoPlay playsInline
-            className="max-w-full max-h-full rounded-lg object-contain"
-            style={{ maxHeight: 'calc(100vh - 160px)' }}
-          />
-        ) : (
-          <img
-            src={item.url}
-            alt=""
-            className="max-w-full max-h-full rounded-lg object-contain select-none"
-            style={{ maxHeight: 'calc(100vh - 160px)' }}
-            draggable={false}
-          />
-        )}
-
-        {total > 1 && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setCurrent(i => (i + 1) % total); }}
-            className="absolute right-2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
-          >
-            <ChevronRight className="w-6 h-6 text-white" />
-          </button>
-        )}
-      </div>
-
-      {/* Thumbnails */}
-      {total > 1 && (
-        <div
-          className="flex gap-2 px-4 py-3 overflow-x-auto justify-center"
-          onClick={e => e.stopPropagation()}
-        >
-          {items.map((it, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
-              className={`flex-shrink-0 w-12 h-9 rounded overflow-hidden border-2 transition-all ${
-                i === current ? 'border-gold scale-110' : 'border-white/20 opacity-50 hover:opacity-80'
-              }`}
-            >
-              {it.resourceType === 'video'
-                ? <div className="w-full h-full bg-white/10 flex items-center justify-center"><Play className="w-3 h-3 text-white fill-white" /></div>
-                : <img src={it.url} alt="" className="w-full h-full object-cover" />
-              }
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
 
 export default function ProjectDetailPage() {
   const { id }       = useParams()
@@ -205,6 +99,8 @@ export default function ProjectDetailPage() {
     )
   }
 
+  // Build a clean mediaItems array: [{ url, resourceType }]
+  // Covers images, videos, and old plain-string entries
   const mediaItems = project.images?.length
     ? project.images.map(normaliseMedia).filter(Boolean)
     : FALLBACK_IMAGES.map((url) => ({ url, resourceType: 'image' }))
@@ -220,7 +116,7 @@ export default function ProjectDetailPage() {
             </Link>
           </motion.div>
 
-          {/* ── Main media gallery ── */}
+          {/* ── Main media gallery — supports images AND videos ── */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
             <Swiper
               modules={[Navigation, Thumbs, Pagination]}
@@ -232,6 +128,7 @@ export default function ProjectDetailPage() {
               {mediaItems.map((item, index) => (
                 <SwiperSlide key={index}>
                   {item.resourceType === 'video' ? (
+                    /* ── Video slide ── */
                     <div className="w-full h-full bg-black flex items-center justify-center relative">
                       <video
                         src={item.url}
@@ -244,38 +141,28 @@ export default function ProjectDetailPage() {
                       </span>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      className="w-full h-full block relative group focus:outline-none"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openLightbox(index);
-                      }}
-                      aria-label={`View image ${index + 1} fullscreen`}
+                    /* ── Image slide ── */
+                    <div
+                      className="w-full h-full bg-cover bg-center cursor-pointer relative group"
+                      style={{ backgroundImage: `url(${item.url})` }}
+                      onClick={() => openLightbox(index)}
                     >
-                      <img
-                        src={item.url}
-                        alt={`${project.title} - ${index + 1}`}
-                        className="w-full h-full object-cover pointer-events-none"
-                        draggable={false}
-                      />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                         <Maximize className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                    </button>
+                    </div>
                   )}
                 </SwiperSlide>
               ))}
-              <button type="button" className="swiper-prev absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+              <button className="swiper-prev absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
                 <ChevronLeft className="w-6 h-6" />
               </button>
-              <button type="button" className="swiper-next absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+              <button className="swiper-next absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
                 <ChevronRight className="w-6 h-6" />
               </button>
             </Swiper>
 
-            {/* Thumbnail strip */}
+            {/* ── Thumbnail strip — image thumbnails + video icon for videos ── */}
             {mediaItems.length > 1 && (
               <Swiper
                 modules={[Thumbs]}
@@ -306,6 +193,7 @@ export default function ProjectDetailPage() {
               </Swiper>
             )}
 
+            {/* File count pill */}
             {mediaItems.length > 1 && (
               <p className="mt-2 text-xs text-muted-foreground">
                 {mediaItems.length} files — {mediaItems.filter(m => m.resourceType === 'image').length} images · {mediaItems.filter(m => m.resourceType === 'video').length} videos
@@ -343,6 +231,7 @@ export default function ProjectDetailPage() {
                       <dd className="font-medium">{project.location}</dd>
                     </div>
                   )}
+                  
                   {project.completionDate && (
                     <div className="flex justify-between py-2 border-b border-border">
                       <dt className="text-muted-foreground">Year</dt>
@@ -398,13 +287,21 @@ export default function ProjectDetailPage() {
         </Section>
       )}
 
-      {lightboxOpen && (
-        <Lightbox
-          items={mediaItems}
-          startIndex={lightboxIndex}
-          onClose={() => setLightboxOpen(false)}
-        />
-      )}
+      {/* Lightbox — images only (videos play inline in the gallery) */}
+      <Modal isOpen={lightboxOpen} onClose={() => setLightboxOpen(false)} size="full">
+        <div className="relative h-[90vh] bg-black flex items-center justify-center">
+          <button onClick={() => setLightboxOpen(false)} className="absolute top-4 right-4 z-20 p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+            <X className="w-6 h-6 text-white" />
+          </button>
+          <Swiper modules={[Navigation, Pagination]} navigation pagination={{ clickable: true }} initialSlide={lightboxIndex} className="w-full h-full">
+            {mediaItems.filter(m => m.resourceType === 'image').map((item, index) => (
+              <SwiperSlide key={index} className="flex items-center justify-center">
+                <img src={item.url} alt={`${project.title} - ${index + 1}`} className="max-w-full max-h-full object-contain" />
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
+      </Modal>
     </>
   )
 }
