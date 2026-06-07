@@ -266,22 +266,16 @@ export default function ProjectsPage() {
 // ─── Project Card ─────────────────────────────────────────────────────────────
 function ProjectCard({ project, index }) {
   const projectId  = project._id || project.id
-  const images     = project.images || []
+  const [activeIdx, setActiveIdx] = useState(0)
 
-  // First image for thumbnail; fall back to first video if no image exists
-  const firstImg   = images.find((img) => !img.resourceType || img.resourceType === 'image')
-  const firstVideo = images.find((img) => img.resourceType === 'video')
-  const previewItem = firstImg
-    ? normaliseMedia(firstImg)
-    : firstVideo
-    ? normaliseMedia(firstVideo)
-    : null
+  const mediaItems = project.images?.length
+    ? project.images.map(normaliseMedia).filter(Boolean)
+    : [{ url: FALLBACK, resourceType: 'image' }]
 
-  const previewUrl = previewItem?.url || FALLBACK
-  const isVideo    = previewItem?.resourceType === 'video'
-
-  const videoCount = images.filter((img) => img.resourceType === 'video').length
-  const imageCount = images.filter((img) => !img.resourceType || img.resourceType === 'image').length
+  const current  = mediaItems[activeIdx] || mediaItems[0]
+  const isVideo  = current.resourceType === 'video'
+  const videoCount = mediaItems.filter((img) => img.resourceType === 'video').length
+  const imageCount = mediaItems.filter((img) => img.resourceType === 'image').length
 
   return (
     <motion.div
@@ -290,78 +284,99 @@ function ProjectCard({ project, index }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ delay: Math.min(index * 0.05, 0.3) }}
-      className="group"
+      className="group rounded-2xl bg-card border border-border overflow-hidden"
     >
-      <Link to={`/projects/${projectId}`}>
-        {/* Thumbnail */}
+      <div className="relative">
         <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-muted">
           {isVideo ? (
             <video
-              src={previewUrl}
+              key={current.url}
+              src={current.url}
               muted
               playsInline
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              className="w-full h-full object-cover"
             />
           ) : (
             <img
-              src={previewUrl}
+              src={current.url}
               alt={project.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              className="w-full h-full object-cover"
               onError={(e) => { e.currentTarget.src = FALLBACK }}
             />
           )}
 
-          {/* Dark overlay on hover */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
-          {/* Video badge */}
-          {isVideo && (
-            <span className="absolute top-3 left-3 flex items-center gap-1 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
-              <Play className="w-2.5 h-2.5 fill-white" /> Video
+          {mediaItems.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setActiveIdx((i) => (i - 1 + mediaItems.length) % mediaItems.length) }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setActiveIdx((i) => (i + 1) % mediaItems.length) }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+                aria-label="Next image"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </>
+          )}
+
+          {mediaItems.length > 1 && (
+            <span className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+              {activeIdx + 1} / {mediaItems.length}
             </span>
           )}
-
-          {/* Media count badges */}
-          <div className="absolute top-3 right-3 flex gap-1">
-            {imageCount > 0 && images.length > 1 && (
-              <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
-                {imageCount} img
-              </span>
-            )}
-            {videoCount > 0 && (
-              <span className="bg-black/60 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                <Play className="w-2.5 h-2.5 fill-white" /> {videoCount}
-              </span>
-            )}
-          </div>
-
-          {/* Hover CTA */}
-          <div className="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-            <span className="inline-flex items-center gap-2 text-white text-sm font-medium">
-              View Project <ArrowRight className="w-4 h-4" />
-            </span>
-          </div>
         </div>
 
-        {/* Info */}
-        <div className="mt-4">
-          <span className="text-sm text-gold font-medium">{project.category}</span>
-          <h3 className="mt-1 text-lg font-semibold group-hover:text-gold transition-colors line-clamp-1">
-            {project.title}
-          </h3>
-          {project.location && (
-            <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1">
-              <MapPin className="w-3 h-3 flex-shrink-0" />
-              {project.location}
-            </p>
-          )}
-          {project.description && (
-            <p className="mt-2 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
-              {project.description}
-            </p>
-          )}
-        </div>
-      </Link>
+        {mediaItems.length > 1 && (
+          <div className="flex gap-1.5 mt-3 overflow-x-auto pb-1">
+            {mediaItems.map((item, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveIdx(idx)}
+                className={`flex-shrink-0 w-14 h-12 rounded-md overflow-hidden border-2 transition-all ${idx === activeIdx ? 'border-gold' : 'border-transparent opacity-60 hover:opacity-100'}`}
+              >
+                {item.resourceType === 'video' ? (
+                  <div className="w-full h-full bg-muted flex items-center justify-center">
+                    <Play className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                ) : (
+                  <img src={item.url} alt="" className="w-full h-full object-cover" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="p-4">
+        <span className="text-sm text-gold font-medium">{project.category}</span>
+        <h3 className="mt-2 text-lg font-semibold text-foreground line-clamp-1">
+          {project.title}
+        </h3>
+        {project.location && (
+          <p className="mt-2 text-sm text-muted-foreground flex items-center gap-1">
+            <MapPin className="w-3 h-3 flex-shrink-0" />
+            {project.location}
+          </p>
+        )}
+        {project.description && (
+          <p className="mt-3 text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+            {project.description}
+          </p>
+        )}
+        <Link
+          to={`/projects/${projectId}`}
+          className="inline-flex items-center gap-2 mt-4 text-gold text-sm font-medium hover:text-gold-dark"
+        >
+          View Project <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
     </motion.div>
   )
 }
