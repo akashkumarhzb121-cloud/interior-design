@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowRight, MapPin, Play, SlidersHorizontal, X, Images, Sparkles } from 'lucide-react'
+import { ArrowRight, MapPin, Play, SlidersHorizontal, X, Images, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { ProjectCardSkeleton } from '@/components/ui/Skeleton'
