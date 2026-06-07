@@ -28,11 +28,7 @@ const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&q=80',
 ]
 
-// ─── Standalone lightbox overlay (replaces Modal+Swiper which caused redirect) ─
-// FIX: The old Modal contained a <Swiper navigation> which searched the DOM for
-// .swiper-prev / .swiper-next and found the MAIN gallery's buttons instead.
-// On mobile this caused a wrong navigation event → modal unmounted → /admin/login.
-// This plain fixed div has zero dependency on Swiper — no conflict possible.
+// ─── Standalone lightbox overlay ─
 function Lightbox({ items, startIndex, onClose }) {
   const [current, setCurrent] = useState(startIndex)
   const total = items.length
@@ -62,7 +58,8 @@ function Lightbox({ items, startIndex, onClose }) {
       <div className="flex items-center justify-between px-4 py-3" onClick={e => e.stopPropagation()}>
         <span className="text-white/50 text-sm">{current + 1} / {total}</span>
         <button
-          onClick={onClose}
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
           className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
         >
           <X className="w-5 h-5 text-white" />
@@ -76,7 +73,8 @@ function Lightbox({ items, startIndex, onClose }) {
       >
         {total > 1 && (
           <button
-            onClick={() => setCurrent(i => (i - 1 + total) % total)}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setCurrent(i => (i - 1 + total) % total); }}
             className="absolute left-2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
           >
             <ChevronLeft className="w-6 h-6 text-white" />
@@ -102,7 +100,8 @@ function Lightbox({ items, startIndex, onClose }) {
 
         {total > 1 && (
           <button
-            onClick={() => setCurrent(i => (i + 1) % total)}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setCurrent(i => (i + 1) % total); }}
             className="absolute right-2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
           >
             <ChevronRight className="w-6 h-6 text-white" />
@@ -119,7 +118,8 @@ function Lightbox({ items, startIndex, onClose }) {
           {items.map((it, i) => (
             <button
               key={i}
-              onClick={() => setCurrent(i)}
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setCurrent(i); }}
               className={`flex-shrink-0 w-12 h-9 rounded overflow-hidden border-2 transition-all ${
                 i === current ? 'border-gold scale-110' : 'border-white/20 opacity-50 hover:opacity-80'
               }`}
@@ -244,19 +244,21 @@ export default function ProjectDetailPage() {
                       </span>
                     </div>
                   ) : (
-                    // FIX: changed from <div onClick> to <button onClick>
-                    // On mobile, <div> tap events are swallowed by Swiper's touch
-                    // handler. <button> is natively interactive — tap fires every time.
                     <button
                       type="button"
                       className="w-full h-full block relative group focus:outline-none"
-                      onClick={() => openLightbox(index)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openLightbox(index);
+                      }}
                       aria-label={`View image ${index + 1} fullscreen`}
                     >
                       <img
                         src={item.url}
                         alt={`${project.title} - ${index + 1}`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover pointer-events-none"
+                        draggable={false}
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
                         <Maximize className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -265,10 +267,10 @@ export default function ProjectDetailPage() {
                   )}
                 </SwiperSlide>
               ))}
-              <button className="swiper-prev absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+              <button type="button" className="swiper-prev absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
                 <ChevronLeft className="w-6 h-6" />
               </button>
-              <button className="swiper-next absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+              <button type="button" className="swiper-next absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
                 <ChevronRight className="w-6 h-6" />
               </button>
             </Swiper>
@@ -396,11 +398,6 @@ export default function ProjectDetailPage() {
         </Section>
       )}
 
-      {/* FIX: Replaced <Modal> + <Swiper navigation> with a plain fixed overlay.
-          The old Modal had <Swiper navigation> which searched the whole DOM for
-          .swiper-prev and .swiper-next, found the main gallery's buttons,
-          caused a wrong Swiper event on mobile → modal unmounted → /admin/login.
-          This Lightbox component is just a div — no Swiper, no conflict. */}
       {lightboxOpen && (
         <Lightbox
           items={mediaItems}
