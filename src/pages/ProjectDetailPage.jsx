@@ -129,10 +129,18 @@ export default function ProjectDetailPage() {
               navigation={{ prevEl: '.swiper-prev', nextEl: '.swiper-next' }}
               thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
               pagination={{ clickable: true }}
+              preventClicks={false}
+              preventClicksPropagation={false}
               className="aspect-[16/9] min-h-[260px] rounded-2xl overflow-hidden"
             >
               {mediaItems.map((item, index) => (
-                <SwiperSlide key={index}>
+                <SwiperSlide
+                  key={index}
+                  onClick={() => item.resourceType === 'image' && openLightbox(index)}
+                  onTouchEnd={() => item.resourceType === 'image' && openLightbox(index)}
+                  role={item.resourceType === 'image' ? 'button' : undefined}
+                  tabIndex={item.resourceType === 'image' ? 0 : undefined}
+                >
                   {item.resourceType === 'video' ? (
                     /* ── Video slide ── */
                     <div className="w-full h-full bg-black flex items-center justify-center relative">
@@ -184,6 +192,7 @@ export default function ProjectDetailPage() {
                     <div
                       className="aspect-video rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-gold transition-colors bg-muted"
                       onClick={() => item.resourceType === 'image' && openLightbox(index)}
+                      onTouchEnd={() => item.resourceType === 'image' && openLightbox(index)}
                       role={item.resourceType === 'image' ? 'button' : undefined}
                       tabIndex={item.resourceType === 'image' ? 0 : undefined}
                     >
