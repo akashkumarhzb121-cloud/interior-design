@@ -1,32 +1,25 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Swiper, SwiperSlide } from 'swiper/react'
-import { Thumbs, Pagination } from 'swiper/modules'
-import {
-  ArrowLeft, ArrowRight, MapPin, Calendar,
-  ChevronLeft, ChevronRight, X, Play, Maximize2,
-} from 'lucide-react'
+import { Navigation, Thumbs, Pagination } from 'swiper/modules'
+import { ArrowLeft, ArrowRight, MapPin, Calendar, Maximize, ChevronLeft, ChevronRight, X, Play } from 'lucide-react'
 import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { projectsApi } from '@/api/services'
 
 import 'swiper/css'
+import 'swiper/css/navigation'
 import 'swiper/css/thumbs'
 import 'swiper/css/pagination'
-
-// ─── NOTE: We intentionally removed these imports vs the old code ─────────────
-// ✗ import Modal from '@/components/ui/Modal'          ← caused redirect on mobile
-// ✗ import { Navigation } from 'swiper/modules'        ← caused CSS class conflict
-// ✗ import 'swiper/css/navigation'                     ← no longer needed
-// ─────────────────────────────────────────────────────────────────────────────
 
 function normaliseMedia(img) {
   if (!img) return null
   const url = typeof img === 'string' ? img : img.url
   if (!url) return null
-  return { url, resourceType: img.resourceType || 'image' }
+  const resourceType = img.resourceType || 'image'
+  return { url, resourceType }
 }
 
 const FALLBACK_IMAGES = [
@@ -35,144 +28,92 @@ const FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=1200&q=80',
 ]
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Lightbox
-//
-// Built as a plain fixed overlay — NOT using the Modal component.
-//
-// WHY NOT Modal:
-//   Your old code put <Swiper navigation> inside <Modal>. Swiper's navigation
-//   prop searches the entire DOM for elements with class names "swiper-prev"
-//   and "swiper-next". Your main gallery also has buttons with those exact
-//   class names. On mobile, Swiper finds those main gallery buttons instead of
-//   lightbox buttons, fires a navigation event on the wrong swiper, the modal
-//   unmounts, React Router detects an unauthenticated route change, and
-//   ProtectedRoute redirects to /admin/login.
-//
-// WHY <button> not <div> for image slides:
-//   A <div onClick> on mobile has a 300ms tap delay and can be swallowed by
-//   Swiper's touch/swipe detection. A <button> is a native interactive element
-//   — tap fires instantly and reliably on all mobile browsers.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Standalone lightbox overlay (replaces Modal+Swiper which caused redirect) ─
+// FIX: The old Modal contained a <Swiper navigation> which searched the DOM for
+// .swiper-prev / .swiper-next and found the MAIN gallery's buttons instead.
+// On mobile this caused a wrong navigation event → modal unmounted → /admin/login.
+// This plain fixed div has zero dependency on Swiper — no conflict possible.
 function Lightbox({ items, startIndex, onClose }) {
   const [current, setCurrent] = useState(startIndex)
+  const total = items.length
 
-  const prev = useCallback(
-    () => setCurrent(i => (i - 1 + items.length) % items.length),
-    [items.length]
-  )
-  const next = useCallback(
-    () => setCurrent(i => (i + 1) % items.length),
-    [items.length]
-  )
-
-  // Keyboard navigation + lock body scroll while open
   useEffect(() => {
     document.body.style.overflow = 'hidden'
-    const handler = (e) => {
-      if (e.key === 'Escape')     onClose()
-      if (e.key === 'ArrowLeft')  prev()
-      if (e.key === 'ArrowRight') next()
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose()
+      if (e.key === 'ArrowLeft') setCurrent(i => (i - 1 + total) % total)
+      if (e.key === 'ArrowRight') setCurrent(i => (i + 1) % total)
     }
-    window.addEventListener('keydown', handler)
+    window.addEventListener('keydown', onKey)
     return () => {
       document.body.style.overflow = ''
-      window.removeEventListener('keydown', handler)
+      window.removeEventListener('keydown', onKey)
     }
-  }, [onClose, prev, next])
+  }, [onClose, total])
 
   const item = items[current]
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[9999] bg-black/96 flex flex-col"
-      // Clicking dark backdrop closes lightbox
+    <div
+      className="fixed inset-0 z-[9999] bg-black/95 flex flex-col"
       onClick={onClose}
     >
-      {/* ── Top bar ── */}
-      <div
-        className="flex items-center justify-between px-4 py-3 flex-shrink-0"
-        onClick={e => e.stopPropagation()}
-      >
-        <span className="text-white/50 text-sm tabular-nums select-none">
-          {current + 1} / {items.length}
-        </span>
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-4 py-3" onClick={e => e.stopPropagation()}>
+        <span className="text-white/50 text-sm">{current + 1} / {total}</span>
         <button
           onClick={onClose}
-          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center transition-colors"
-          aria-label="Close"
+          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
         >
           <X className="w-5 h-5 text-white" />
         </button>
       </div>
 
-      {/* ── Media area ── */}
+      {/* Media */}
       <div
-        className="flex-1 flex items-center justify-center relative min-h-0"
+        className="flex-1 flex items-center justify-center relative min-h-0 px-14"
         onClick={e => e.stopPropagation()}
       >
-        {/* Prev */}
-        {items.length > 1 && (
+        {total > 1 && (
           <button
-            onClick={prev}
-            className="absolute left-2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center transition-colors"
-            aria-label="Previous"
+            onClick={() => setCurrent(i => (i - 1 + total) % total)}
+            className="absolute left-2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
           >
             <ChevronLeft className="w-6 h-6 text-white" />
           </button>
         )}
 
-        {/* Image / Video */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={current}
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={{ duration: 0.15 }}
-            className="w-full h-full flex items-center justify-center px-14"
-          >
-            {item.resourceType === 'video' ? (
-              <video
-                src={item.url}
-                controls
-                autoPlay
-                playsInline
-                className="max-w-full max-h-full rounded-lg object-contain"
-                style={{ maxHeight: 'calc(100vh - 160px)' }}
-              />
-            ) : (
-              <img
-                src={item.url}
-                alt=""
-                className="max-w-full max-h-full rounded-lg object-contain select-none"
-                style={{ maxHeight: 'calc(100vh - 160px)' }}
-                draggable={false}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
+        {item.resourceType === 'video' ? (
+          <video
+            src={item.url}
+            controls autoPlay playsInline
+            className="max-w-full max-h-full rounded-lg object-contain"
+            style={{ maxHeight: 'calc(100vh - 160px)' }}
+          />
+        ) : (
+          <img
+            src={item.url}
+            alt=""
+            className="max-w-full max-h-full rounded-lg object-contain select-none"
+            style={{ maxHeight: 'calc(100vh - 160px)' }}
+            draggable={false}
+          />
+        )}
 
-        {/* Next */}
-        {items.length > 1 && (
+        {total > 1 && (
           <button
-            onClick={next}
-            className="absolute right-2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center transition-colors"
-            aria-label="Next"
+            onClick={() => setCurrent(i => (i + 1) % total)}
+            className="absolute right-2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center"
           >
             <ChevronRight className="w-6 h-6 text-white" />
           </button>
         )}
       </div>
 
-      {/* ── Thumbnail filmstrip ── */}
-      {items.length > 1 && (
+      {/* Thumbnails */}
+      {total > 1 && (
         <div
-          className="flex gap-2 px-4 py-3 overflow-x-auto flex-shrink-0 justify-center"
+          className="flex gap-2 px-4 py-3 overflow-x-auto justify-center"
           onClick={e => e.stopPropagation()}
         >
           {items.map((it, i) => (
@@ -180,38 +121,30 @@ function Lightbox({ items, startIndex, onClose }) {
               key={i}
               onClick={() => setCurrent(i)}
               className={`flex-shrink-0 w-12 h-9 rounded overflow-hidden border-2 transition-all ${
-                i === current
-                  ? 'border-gold scale-110'
-                  : 'border-white/20 opacity-50 hover:opacity-80'
+                i === current ? 'border-gold scale-110' : 'border-white/20 opacity-50 hover:opacity-80'
               }`}
             >
-              {it.resourceType === 'video' ? (
-                <div className="w-full h-full bg-white/10 flex items-center justify-center">
-                  <Play className="w-3 h-3 text-white fill-white" />
-                </div>
-              ) : (
-                <img src={it.url} alt="" className="w-full h-full object-cover" />
-              )}
+              {it.resourceType === 'video'
+                ? <div className="w-full h-full bg-white/10 flex items-center justify-center"><Play className="w-3 h-3 text-white fill-white" /></div>
+                : <img src={it.url} alt="" className="w-full h-full object-cover" />
+              }
             </button>
           ))}
         </div>
       )}
-    </motion.div>
+    </div>
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main Page
-// ─────────────────────────────────────────────────────────────────────────────
 export default function ProjectDetailPage() {
-  const { id }     = useParams()
-  const navigate   = useNavigate()
-  const [project,         setProject]         = useState(null)
+  const { id }       = useParams()
+  const navigate     = useNavigate()
+  const [project, setProject]               = useState(null)
   const [relatedProjects, setRelatedProjects] = useState([])
-  const [loading,         setLoading]         = useState(true)
-  const [thumbsSwiper,    setThumbsSwiper]    = useState(null)
-  const [lightboxOpen,    setLightboxOpen]    = useState(false)
-  const [lightboxIndex,   setLightboxIndex]   = useState(0)
+  const [loading, setLoading]               = useState(true)
+  const [thumbsSwiper, setThumbsSwiper]     = useState(null)
+  const [lightboxOpen, setLightboxOpen]     = useState(false)
+  const [lightboxIndex, setLightboxIndex]   = useState(0)
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -222,12 +155,12 @@ export default function ProjectDetailPage() {
           projectsApi.getById(id),
           projectsApi.getAll(),
         ])
-        const projectData = projectRes.data?.data || projectRes.data
+        const projectData  = projectRes.data?.data || projectRes.data
         setProject(projectData)
 
         const allProjects = allProjectsRes.data?.data || allProjectsRes.data || []
-        const related = allProjects
-          .filter(p => (p._id || p.id) !== id && p.category === projectData?.category)
+        const related     = allProjects
+          .filter((p) => (p._id || p.id) !== id && p.category === projectData?.category)
           .slice(0, 3)
         setRelatedProjects(related)
       } catch (error) {
@@ -240,10 +173,7 @@ export default function ProjectDetailPage() {
     fetchProject()
   }, [id, navigate])
 
-  const openLightbox = (index) => {
-    setLightboxIndex(index)
-    setLightboxOpen(true)
-  }
+  const openLightbox = (index) => { setLightboxIndex(index); setLightboxOpen(true) }
 
   if (loading) {
     return (
@@ -257,9 +187,7 @@ export default function ProjectDetailPage() {
               <Skeleton className="h-6 w-1/2" />
               <Skeleton className="h-32 w-full" />
             </div>
-            <div className="space-y-4">
-              <Skeleton className="h-48 w-full rounded-xl" />
-            </div>
+            <div className="space-y-4"><Skeleton className="h-48 w-full rounded-xl" /></div>
           </div>
         </div>
       </div>
@@ -279,128 +207,96 @@ export default function ProjectDetailPage() {
 
   const mediaItems = project.images?.length
     ? project.images.map(normaliseMedia).filter(Boolean)
-    : FALLBACK_IMAGES.map(url => ({ url, resourceType: 'image' }))
+    : FALLBACK_IMAGES.map((url) => ({ url, resourceType: 'image' }))
 
   return (
     <>
       <div className="min-h-screen pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-          {/* Back link */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="mb-8">
-            <Link
-              to="/projects"
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <Link to="/projects" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="w-4 h-4" />Back to Projects
             </Link>
           </motion.div>
 
-          {/* ── Main gallery ── */}
+          {/* ── Main media gallery ── */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-            <div className="relative">
-              <Swiper
-                modules={[Thumbs, Pagination]}
-                thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
-                pagination={{ clickable: true }}
-                className="aspect-[16/9] min-h-[220px] rounded-2xl overflow-hidden"
-              >
-                {mediaItems.map((item, index) => (
-                  <SwiperSlide key={index}>
-                    {item.resourceType === 'video' ? (
-                      <div className="w-full h-full bg-black flex items-center justify-center relative">
-                        <video
-                          src={item.url}
-                          controls
-                          playsInline
-                          className="w-full h-full object-contain"
-                        />
-                        <span className="absolute top-3 left-3 flex items-center gap-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded-full pointer-events-none">
-                          <Play className="w-2.5 h-2.5 fill-white" /> Video
-                        </span>
+            <Swiper
+              modules={[Navigation, Thumbs, Pagination]}
+              navigation={{ prevEl: '.swiper-prev', nextEl: '.swiper-next' }}
+              thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
+              pagination={{ clickable: true }}
+              className="aspect-[16/9] min-h-[260px] rounded-2xl overflow-hidden"
+            >
+              {mediaItems.map((item, index) => (
+                <SwiperSlide key={index}>
+                  {item.resourceType === 'video' ? (
+                    <div className="w-full h-full bg-black flex items-center justify-center relative">
+                      <video
+                        src={item.url}
+                        controls
+                        playsInline
+                        className="w-full h-full object-contain"
+                      />
+                      <span className="absolute top-3 left-3 flex items-center gap-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded-full pointer-events-none">
+                        <Play className="w-2.5 h-2.5 fill-white" /> Video
+                      </span>
+                    </div>
+                  ) : (
+                    // FIX: changed from <div onClick> to <button onClick>
+                    // On mobile, <div> tap events are swallowed by Swiper's touch
+                    // handler. <button> is natively interactive — tap fires every time.
+                    <button
+                      type="button"
+                      className="w-full h-full block relative group focus:outline-none"
+                      onClick={() => openLightbox(index)}
+                      aria-label={`View image ${index + 1} fullscreen`}
+                    >
+                      <img
+                        src={item.url}
+                        alt={`${project.title} - ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
+                        <Maximize className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                       </div>
-                    ) : (
-                      // ── KEY FIX: <button> not <div> ──────────────────────────
-                      // On mobile, <div onClick> is unreliable — Swiper's touch
-                      // handler can swallow tap events on non-interactive elements.
-                      // <button> is natively interactive — tap fires every time.
-                      <button
-                        type="button"
-                        className="w-full h-full block relative group focus:outline-none bg-black"
-                        onClick={() => openLightbox(index)}
-                        aria-label={`View image ${index + 1} fullscreen`}
-                      >
-                        <img
-                          src={item.url}
-                          alt={`${project.title} - ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        {/* Desktop hover hint */}
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors hidden md:flex items-center justify-center pointer-events-none">
-                          <Maximize2 className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                        {/* Mobile tap hint */}
-                        <span className="absolute bottom-3 right-3 md:hidden flex items-center gap-1 bg-black/60 text-white text-xs px-2 py-1 rounded-full pointer-events-none">
-                          <Maximize2 className="w-3 h-3" /> Tap to expand
-                        </span>
-                      </button>
-                    )}
-                  </SwiperSlide>
-                ))}
-
-                {/* Nav arrows — unique class names (NOT swiper-prev/swiper-next) */}
-                {mediaItems.length > 1 && (
-                  <>
-                    <button
-                      className="proj-gallery-prev absolute left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-md"
-                      onClick={e => {
-                        e.stopPropagation()
-                        e.currentTarget.closest('.swiper')?.swiper?.slidePrev()
-                      }}
-                      aria-label="Previous slide"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
                     </button>
-                    <button
-                      className="proj-gallery-next absolute right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-md"
-                      onClick={e => {
-                        e.stopPropagation()
-                        e.currentTarget.closest('.swiper')?.swiper?.slideNext()
-                      }}
-                      aria-label="Next slide"
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-                  </>
-                )}
-              </Swiper>
-            </div>
+                  )}
+                </SwiperSlide>
+              ))}
+              <button className="swiper-prev absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <button className="swiper-next absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors">
+                <ChevronRight className="w-6 h-6" />
+              </button>
+            </Swiper>
 
             {/* Thumbnail strip */}
             {mediaItems.length > 1 && (
               <Swiper
                 modules={[Thumbs]}
                 onSwiper={setThumbsSwiper}
-                spaceBetween={10}
+                spaceBetween={12}
+                slidesPerView={6}
                 watchSlidesProgress
-                className="mt-3"
-                breakpoints={{
-                  0:    { slidesPerView: 4 },
-                  480:  { slidesPerView: 5 },
-                  640:  { slidesPerView: 6 },
-                  1024: { slidesPerView: 8 },
-                }}
+                className="mt-4"
+                breakpoints={{ 0: { slidesPerView: 3 }, 640: { slidesPerView: 4 }, 768: { slidesPerView: 5 }, 1024: { slidesPerView: 6 } }}
               >
                 {mediaItems.map((item, index) => (
                   <SwiperSlide key={index}>
-                    <div className="aspect-video rounded-lg overflow-hidden cursor-pointer border-2 border-transparent [.swiper-slide-thumb-active_&]:border-gold transition-colors bg-muted">
+                    <div className="aspect-video rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-gold transition-colors bg-muted">
                       {item.resourceType === 'video' ? (
                         <div className="w-full h-full flex flex-col items-center justify-center gap-1">
-                          <Play className="w-4 h-4 text-muted-foreground fill-current" />
-                          <span className="text-[9px] text-muted-foreground">Video</span>
+                          <Play className="w-5 h-5 text-muted-foreground fill-current" />
+                          <span className="text-[10px] text-muted-foreground">Video</span>
                         </div>
                       ) : (
-                        <img src={item.url} alt="" className="w-full h-full object-cover" />
+                        <div
+                          className="w-full h-full bg-cover bg-center"
+                          style={{ backgroundImage: `url(${item.url})` }}
+                        />
                       )}
                     </div>
                   </SwiperSlide>
@@ -410,38 +306,19 @@ export default function ProjectDetailPage() {
 
             {mediaItems.length > 1 && (
               <p className="mt-2 text-xs text-muted-foreground">
-                {mediaItems.length} files —{' '}
-                {mediaItems.filter(m => m.resourceType === 'image').length} images
-                {mediaItems.filter(m => m.resourceType === 'video').length > 0 &&
-                  ` · ${mediaItems.filter(m => m.resourceType === 'video').length} videos`}
-                <span className="ml-2 hidden md:inline text-muted-foreground/50">· Click any image to expand</span>
+                {mediaItems.length} files — {mediaItems.filter(m => m.resourceType === 'image').length} images · {mediaItems.filter(m => m.resourceType === 'video').length} videos
               </p>
             )}
           </motion.div>
 
           {/* Project info */}
           <div className="grid lg:grid-cols-3 gap-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="lg:col-span-2"
-            >
-              <span className="inline-block px-4 py-1.5 bg-gold/10 text-gold text-sm font-medium rounded-full mb-4">
-                {project.category}
-              </span>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="lg:col-span-2">
+              <span className="inline-block px-4 py-1.5 bg-gold/10 text-gold text-sm font-medium rounded-full mb-4">{project.category}</span>
               <h1 className="text-3xl md:text-4xl font-serif font-bold">{project.title}</h1>
               <div className="flex flex-wrap items-center gap-4 mt-4 text-muted-foreground">
-                {project.location && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />{project.location}
-                  </span>
-                )}
-                {project.completionDate && (
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />{new Date(project.completionDate).getFullYear()}
-                  </span>
-                )}
+                {project.location && <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{project.location}</span>}
+                {project.completionDate && <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />{new Date(project.completionDate).getFullYear()}</span>}
               </div>
               <div className="mt-8 prose prose-lg max-w-none">
                 <p className="text-muted-foreground leading-relaxed">
@@ -450,11 +327,7 @@ export default function ProjectDetailPage() {
               </div>
             </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
               <div className="bg-card border border-border rounded-2xl p-6 lg:sticky lg:top-28">
                 <h3 className="text-lg font-semibold mb-4">Project Details</h3>
                 <dl className="space-y-4">
@@ -482,9 +355,7 @@ export default function ProjectDetailPage() {
                   )}
                 </dl>
                 <Link to="/booking" className="block mt-6">
-                  <Button variant="gold" className="w-full">
-                    Start Your Project <ArrowRight className="w-4 h-4" />
-                  </Button>
+                  <Button variant="gold" className="w-full">Start Your Project<ArrowRight className="w-4 h-4" /></Button>
                 </Link>
               </div>
             </motion.div>
@@ -496,45 +367,24 @@ export default function ProjectDetailPage() {
       {relatedProjects.length > 0 && (
         <Section className="bg-sand">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <SectionHeader
-              badge="More Projects"
-              title="Related Projects"
-              description="Explore more of our work in this category."
-            />
+            <SectionHeader badge="More Projects" title="Related Projects" description="Explore more of our work in this category." />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {relatedProjects.map((rel, index) => {
                 const relId    = rel._id || rel.id
                 const relMedia = normaliseMedia(rel.images?.[0])
                 return (
-                  <motion.div
-                    key={relId}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
-                    className="group"
-                  >
+                  <motion.div key={relId} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="group">
                     <Link to={`/projects/${relId}`}>
                       <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-muted">
                         {relMedia?.resourceType === 'video' ? (
                           <video src={relMedia.url} className="w-full h-full object-cover" muted />
                         ) : (
-                          <img
-                            src={relMedia?.url || FALLBACK_IMAGES[0]}
-                            alt={rel.title}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
+                          <img src={relMedia?.url || FALLBACK_IMAGES[0]} alt={rel.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                         )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                         <div className="absolute bottom-4 left-4 right-4">
-                          <h3 className="text-lg font-semibold text-white group-hover:text-gold transition-colors">
-                            {rel.title}
-                          </h3>
-                          {rel.location && (
-                            <p className="text-white/70 text-sm flex items-center gap-1 mt-1">
-                              <MapPin className="w-3 h-3" />{rel.location}
-                            </p>
-                          )}
+                          <h3 className="text-lg font-semibold text-white group-hover:text-gold transition-colors">{rel.title}</h3>
+                          {rel.location && <p className="text-white/70 text-sm flex items-center gap-1 mt-1"><MapPin className="w-3 h-3" />{rel.location}</p>}
                         </div>
                       </div>
                     </Link>
@@ -546,16 +396,18 @@ export default function ProjectDetailPage() {
         </Section>
       )}
 
-      {/* ── Lightbox — standalone fixed overlay, NOT Modal component ── */}
-      <AnimatePresence>
-        {lightboxOpen && (
-          <Lightbox
-            items={mediaItems}
-            startIndex={lightboxIndex}
-            onClose={() => setLightboxOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+      {/* FIX: Replaced <Modal> + <Swiper navigation> with a plain fixed overlay.
+          The old Modal had <Swiper navigation> which searched the whole DOM for
+          .swiper-prev and .swiper-next, found the main gallery's buttons,
+          caused a wrong Swiper event on mobile → modal unmounted → /admin/login.
+          This Lightbox component is just a div — no Swiper, no conflict. */}
+      {lightboxOpen && (
+        <Lightbox
+          items={mediaItems}
+          startIndex={lightboxIndex}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </>
   )
 }
