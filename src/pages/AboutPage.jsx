@@ -9,7 +9,7 @@ const team = [
     name: 'Suraj Sharma',
     role: 'Founder & Principal Designer',
         image: '/surajimg.jpeg',
-    bio: 'With 2+ years in luxury interior design, Suraj brings her vision of timeless elegance to every project.',
+    bio: 'With 2+ years in luxury interior design, Suraj brings his vision of timeless elegance to every project.',
   },
   {
     name: 'Sagar Sharma',
@@ -43,7 +43,7 @@ const milestones = [
   { year: '2024', title: 'Performance Achieved', description: 'Recognized for excellence in residential design' },
   { year: '2025', title: 'Expanded Services', description: 'Added commercial and hospitality design' },
   { year: '2024', title: '20th Project', description: 'Celebrated our milestone ' },
-  { year: '2026', title: 'Industry Leader', description: 'Named among Mumbai top design studios' },
+  { year: '2026', title: 'Growing as a Trusted Design Studio', description: 'Building a reputation for quality and innovation across Mumbai' },
 ]
 
 export default function AboutPage() {
