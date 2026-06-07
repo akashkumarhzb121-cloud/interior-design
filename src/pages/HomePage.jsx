@@ -35,8 +35,6 @@ const FALLBACK_SERVICE_IMAGES = [
   'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=800&q=80',
 ]
 
-const FALLBACK_PROJECT_IMAGE = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80'
-
 export default function HomePage() {
   const [projects,     setProjects]     = useState([])
   const [services,     setServices]     = useState([])
@@ -347,24 +345,17 @@ export default function HomePage() {
   )
 }
 
-function normaliseMedia(img) {
-  if (!img) return null
-  const url = typeof img === 'string' ? img : img.url
-  if (!url) return null
-  return { url, resourceType: img.resourceType || 'image' }
-}
-
 // ─── Project Card ─────────────────────────────────────────────────────────────
 function ProjectCard({ project, index }) {
   const projectId  = project._id || project.id
-  const [activeIdx, setActiveIdx] = useState(0)
+  const images     = project.images || []
+  const FALLBACK   = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80'
 
-  const mediaItems = project.images?.length
-    ? project.images.map(normaliseMedia).filter(Boolean)
-    : [{ url: FALLBACK_PROJECT_IMAGE, resourceType: 'image' }]
-
-  const current  = mediaItems[activeIdx] || mediaItems[0]
-  const isVideo  = current.resourceType === 'video'
+  // Find first image (skip videos for the thumbnail)
+  const firstImg   = images.find(img => !img.resourceType || img.resourceType === 'image')
+  const firstVideo = images.find(img => img.resourceType === 'video')
+  const previewUrl = firstImg?.url || firstVideo?.url || (typeof images[0] === 'string' ? images[0] : FALLBACK)
+  const isVideo    = !firstImg && !!firstVideo
 
   return (
     <motion.div
@@ -372,91 +363,40 @@ function ProjectCard({ project, index }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: index * 0.1 }}
-      className="group rounded-2xl bg-card border border-border overflow-hidden"
+      className="group"
     >
-      <div className="relative">
-        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+      <Link to={projectId ? `/projects/${projectId}` : '/projects'}>
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-muted">
           {isVideo ? (
-            <video
-              key={current.url}
-              src={current.url}
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            />
+            <video src={previewUrl} muted className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
           ) : (
             <img
-              src={current.url}
+              src={previewUrl}
               alt={project.title}
-              className="w-full h-full object-cover"
-              onError={(e) => { e.currentTarget.src = FALLBACK_PROJECT_IMAGE }}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              onError={(e) => { e.target.src = FALLBACK }}
             />
           )}
-
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-
-          {mediaItems.length > 1 && (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); setActiveIdx((i) => (i - 1 + mediaItems.length) % mediaItems.length) }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
-                aria-label="Previous image"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setActiveIdx((i) => (i + 1) % mediaItems.length) }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
-                aria-label="Next image"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </>
-          )}
-
-          {mediaItems.length > 1 && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          {images.length > 1 && (
             <span className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
-              {activeIdx + 1} / {mediaItems.length}
+              +{images.length - 1} more
             </span>
           )}
-        </div>
-
-        {mediaItems.length > 1 && (
-          <div className="flex gap-1.5 mt-3 overflow-x-auto pb-1">
-            {mediaItems.map((item, idx) => (
-              <button
-                key={idx}
-                onClick={() => setActiveIdx(idx)}
-                className={`flex-shrink-0 w-14 h-12 rounded-md overflow-hidden border-2 transition-all ${idx === activeIdx ? 'border-gold' : 'border-transparent opacity-60 hover:opacity-100'}`}
-              >
-                {item.resourceType === 'video' ? (
-                  <div className="w-full h-full bg-muted flex items-center justify-center">
-                    <Play className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                ) : (
-                  <img src={item.url} alt="" className="w-full h-full object-cover" />
-                )}
-              </button>
-            ))}
+          <div className="absolute bottom-4 left-4 right-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
+            <span className="inline-flex items-center gap-2 text-white text-sm font-medium">
+              View Project <ArrowRight className="w-4 h-4" />
+            </span>
           </div>
-        )}
-      </div>
-
-      <div className="p-4">
-        <span className="text-sm text-gold font-medium">{project.category}</span>
-        <h3 className="mt-2 text-lg font-semibold text-foreground line-clamp-1">
-          {project.title}
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground flex items-center gap-1">
-          <MapPin className="w-3 h-3" />{project.location}
-        </p>
-        <Link
-          to={projectId ? `/projects/${projectId}` : '/projects'}
-          className="inline-flex items-center gap-2 mt-4 text-gold text-sm font-medium hover:text-gold-dark"
-        >
-          View Project <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
+        </div>
+        <div className="mt-4">
+          <span className="text-sm text-gold font-medium">{project.category}</span>
+          <h3 className="mt-1 text-lg font-semibold group-hover:text-gold transition-colors">{project.title}</h3>
+          <p className="mt-1 text-sm text-muted-foreground flex items-center gap-1">
+            <MapPin className="w-3 h-3" />{project.location}
+          </p>
+        </div>
+      </Link>
     </motion.div>
   )
 }
