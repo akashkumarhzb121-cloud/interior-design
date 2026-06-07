@@ -67,8 +67,6 @@ export default function ProjectDetailPage() {
     fetchProject()
   }, [id, navigate])
 
-  const openLightbox = (index) => { setLightboxIndex(index); setLightboxOpen(true) }
-
   if (loading) {
     return (
       <div className="min-h-screen pt-24">
@@ -104,6 +102,14 @@ export default function ProjectDetailPage() {
   const mediaItems = project.images?.length
     ? project.images.map(normaliseMedia).filter(Boolean)
     : FALLBACK_IMAGES.map((url) => ({ url, resourceType: 'image' }))
+
+  const imageItems = mediaItems.filter((item) => item.resourceType === 'image')
+  const openLightbox = (index) => {
+    const imageIndex = imageItems.findIndex((item) => item.url === mediaItems[index]?.url)
+    if (imageIndex === -1) return
+    setLightboxIndex(imageIndex)
+    setLightboxOpen(true)
+  }
 
   return (
     <>
@@ -175,7 +181,12 @@ export default function ProjectDetailPage() {
               >
                 {mediaItems.map((item, index) => (
                   <SwiperSlide key={index}>
-                    <div className="aspect-video rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-gold transition-colors bg-muted">
+                    <div
+                      className="aspect-video rounded-lg overflow-hidden cursor-pointer border-2 border-transparent hover:border-gold transition-colors bg-muted"
+                      onClick={() => item.resourceType === 'image' && openLightbox(index)}
+                      role={item.resourceType === 'image' ? 'button' : undefined}
+                      tabIndex={item.resourceType === 'image' ? 0 : undefined}
+                    >
                       {item.resourceType === 'video' ? (
                         <div className="w-full h-full flex flex-col items-center justify-center gap-1">
                           <Play className="w-5 h-5 text-muted-foreground fill-current" />
@@ -294,7 +305,7 @@ export default function ProjectDetailPage() {
             <X className="w-6 h-6 text-white" />
           </button>
           <Swiper modules={[Navigation, Pagination]} navigation pagination={{ clickable: true }} initialSlide={lightboxIndex} className="w-full h-full">
-            {mediaItems.filter(m => m.resourceType === 'image').map((item, index) => (
+            {imageItems.map((item, index) => (
               <SwiperSlide key={index} className="flex items-center justify-center">
                 <img src={item.url} alt={`${project.title} - ${index + 1}`} className="max-w-full max-h-full object-contain" />
               </SwiperSlide>
