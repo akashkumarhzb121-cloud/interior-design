@@ -35,6 +35,8 @@ const FALLBACK_SERVICE_IMAGES = [
   'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=800&q=80',
 ]
 
+const FALLBACK_PROJECT_IMAGE = 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&q=80'
+
 export default function HomePage() {
   const [projects,     setProjects]     = useState([])
   const [services,     setServices]     = useState([])
