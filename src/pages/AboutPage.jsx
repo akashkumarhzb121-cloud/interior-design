@@ -19,7 +19,7 @@ const team = [
   },
   {
     name: 'Nandkishor Sharma',
-    role: 'Senior Interior Designer',
+    role: 'Senior Interior Decorator',
         image: '/nanduimg.jpeg',
     bio: 'Specializing in residential design, Nandkishor creates warm, inviting spaces for families across Mumbai.',
   },
