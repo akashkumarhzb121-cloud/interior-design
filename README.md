@@ -1,4 +1,4 @@
-# Luxe Interiors Frontend
+# Modplint Interiors Frontend
 
 This is a React + Vite frontend for the Luxe Interiors project.
 
