@@ -70,8 +70,8 @@ export default function ContactPage() {
               </div>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <div className="grid sm:grid-cols-2 gap-6">
-                  <Input id="name" label="Full Name" placeholder="John Doe" error={errors.name?.message} {...register('name', { required: 'Name is required' })} />
-                  <Input id="email" type="email" label="Email Address" placeholder="john@example.com" error={errors.email?.message} {...register('email', { required: 'Email is required', pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Invalid email address' } })} />
+                  <Input id="name" label="Full Name" placeholder="Raj Kumar" error={errors.name?.message} {...register('name', { required: 'Name is required' })} />
+                  <Input id="email" type="email" label="Email Address" placeholder="raj@gmail.com" error={errors.email?.message} {...register('email', { required: 'Email is required', pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Invalid email address' } })} />
                 </div>
                 <div className="grid sm:grid-cols-2 gap-6">
                   <Input id="phone" type="tel" label="Phone Number" placeholder="+91 98765 43210" error={errors.phone?.message} {...register('phone', { required: 'Phone number is required' })} />
