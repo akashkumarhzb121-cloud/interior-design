@@ -7,10 +7,11 @@ import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea } from '@/components/ui/Input'
 import { contactApi } from '@/api/services'
+import { useSEO } from '@/hooks/useSEO'
 
 const contactInfo = [
   { icon: MapPin, title: 'Visit Us', details: ['Modplint Interiors Studio', 'Oshiwara, Andheri West', 'Mumbai, Maharashtra 400102'] },
-  { icon: Phone, title: 'Call Us', details: ['+91 8104648421',] },
+  { icon: Phone, title: 'Call Us', details: ['+91-8104648421',] },
   { icon: Mail, title: 'Email Us', details: ['modplintinteriors@gmail.com', 'modplint@gmail.com'] },
   { icon: Clock, title: 'Working Hours', details: ['Mon - Fri: 10:00 AM - 6:00 PM', 'Sat: 10:00 AM - 4:00 PM', 'Sun: Closed'] },
 ]
@@ -33,10 +34,25 @@ export default function ContactPage() {
     }
   }
 
+  const { HelmetComponent } = useSEO({
+    title: 'Contact Us',
+    description: 'Get in touch with Modplint Interiors. Contact us for inquiries, consultations, or to discuss your interior design project in Mumbai.',
+    keywords: 'contact, get in touch, interior design inquiry, consultation request, contact form, Mumbai',
+    canonical: 'https://www.modplintinteriors.com/contact',
+    ogTitle: 'Contact Modplint Interiors | Get in Touch',
+    ogDescription: "Reach out to us for your interior design needs. We're here to help.",
+    ogUrl: 'https://www.modplintinteriors.com/contact',
+    breadcrumb: [
+      { name: 'Home', url: 'https://www.modplintinteriors.com/' },
+      { name: 'Contact', url: 'https://www.modplintinteriors.com/contact' },
+    ],
+  })
+
   return (
     <>
+      <HelmetComponent />
       <section className="relative py-24 md:py-32 bg-charcoal overflow-hidden">
-        <div className="absolute inset-0 opacity-20"><img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920&q=80" alt="" className="w-full h-full object-cover" /></div>
+        <div className="absolute inset-0 opacity-20"><img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920&q=80" alt="Professional contact us background - elegant interior space" className="w-full h-full object-cover" /></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl">
             <span className="inline-block px-4 py-2 bg-gold/20 text-gold text-sm font-medium rounded-full mb-6">Contact Us</span>

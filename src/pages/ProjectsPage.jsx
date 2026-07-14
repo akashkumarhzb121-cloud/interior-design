@@ -6,6 +6,7 @@ import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { ProjectCardSkeleton } from '@/components/ui/Skeleton'
 import { projectsApi } from '@/api/services'
+import { useSEO } from '@/hooks/useSEO'
 import { cn } from '@/lib/utils'
 
 // All categories from the Project model enum
@@ -67,14 +68,29 @@ export default function ProjectsPage() {
     setFiltered(result)
   }, [projects, activeCategory, searchQuery])
 
+  const { HelmetComponent } = useSEO({
+    title: 'Our Interior Design Projects',
+    description: "Browse Modplint Interiors' portfolio of residential, commercial, and hospitality interior design projects across Mumbai.",
+    keywords: 'interior design portfolio, projects, residential projects, commercial spaces, project showcase, Mumbai interior design',
+    canonical: 'https://www.modplintinteriors.com/projects',
+    ogTitle: 'Our Interior Design Projects | Modplint Interiors',
+    ogDescription: "Explore our portfolio of bespoke interior design projects across Mumbai.",
+    ogUrl: 'https://www.modplintinteriors.com/projects',
+    breadcrumb: [
+      { name: 'Home', url: 'https://www.modplintinteriors.com/' },
+      { name: 'Projects', url: 'https://www.modplintinteriors.com/projects' },
+    ],
+  })
+
   return (
     <>
+      <HelmetComponent />
       {/* ── Hero ── */}
       <section className="relative py-24 md:py-32 bg-charcoal overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <img
             src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&q=80"
-            alt=""
+            alt="Modplint Interiors project portfolio background"
             className="w-full h-full object-cover"
           />
         </div>

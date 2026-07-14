@@ -8,6 +8,7 @@ import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { ProjectCardSkeleton, ServiceCardSkeleton, TestimonialCardSkeleton } from '@/components/ui/Skeleton'
 import { projectsApi, servicesApi, testimonialsApi } from '@/api/services'
+import { useSEO } from '@/hooks/useSEO'
 import { cn } from '@/lib/utils'
 
 import 'swiper/css'
@@ -41,6 +42,16 @@ export default function HomePage() {
   const [testimonials, setTestimonials] = useState([])
   const [loading,      setLoading]      = useState(true)
 
+  const { HelmetComponent } = useSEO({
+    title: 'Modplint Interiors | Luxury Interior Design Studio Mumbai',
+    description: "Modplint Interiors — Mumbai's premier luxury interior design studio. Residential & commercial interior design, renovation, and space planning. Book your consultation today.",
+    keywords: 'interior design Mumbai, luxury interior design, home interior design Mumbai, commercial interior design, residential interior design, interior decorator Mumbai, Modplint Interiors, interior design services, modular kitchen, home renovation Mumbai',
+    canonical: 'https://www.modplintinteriors.com/',
+    ogTitle: 'Modplint Interiors | Luxury Interior Design Studio Mumbai',
+    ogDescription: "Transform your space with Mumbai's premier luxury interior design studio. Office, residential & commercial designs. Book your consultation today.",
+    ogUrl: 'https://www.modplintinteriors.com/',
+  })
+
   const { scrollYProgress } = useScroll()
   const heroOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0])
   const heroScale   = useTransform(scrollYProgress, [0, 0.2], [1, 1.1])
@@ -71,6 +82,7 @@ export default function HomePage() {
 
   return (
     <>
+      <HelmetComponent />
       {/* ── Hero ── */}
       <section className="relative min-h-[70vh] sm:min-h-[75vh] md:min-h-[80vh] lg:min-h-[90vh] overflow-hidden">
         <motion.div style={{ opacity: heroOpacity, scale: heroScale }} className="absolute inset-0">

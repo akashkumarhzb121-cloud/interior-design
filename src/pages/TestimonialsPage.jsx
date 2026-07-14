@@ -6,6 +6,7 @@ import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { TestimonialCardSkeleton } from '@/components/ui/Skeleton'
 import { testimonialsApi } from '@/api/services'
+import { useSEO } from '@/hooks/useSEO'
 import { cn } from '@/lib/utils'
 
 // ─── Testimonial Card ────────────────────────────────────────────────────────
@@ -300,12 +301,27 @@ export default function TestimonialsPage() {
 
   useEffect(() => { fetchTestimonials() }, [])
 
+  const { HelmetComponent } = useSEO({
+    title: 'Client Testimonials',
+    description: 'Read testimonials from our satisfied clients. Discover what our customers say about our interior design services in Mumbai.',
+    keywords: 'testimonials, client reviews, customer feedback, interior design reviews, client testimonials, project reviews',
+    canonical: 'https://www.modplintinteriors.com/testimonials',
+    ogTitle: 'Client Testimonials | Modplint Interiors',
+    ogDescription: 'See what our clients say about our interior design services.',
+    ogUrl: 'https://www.modplintinteriors.com/testimonials',
+    breadcrumb: [
+      { name: 'Home', url: 'https://www.modplintinteriors.com/' },
+      { name: 'Testimonials', url: 'https://www.modplintinteriors.com/testimonials' },
+    ],
+  })
+
   return (
     <>
+      <HelmetComponent />
       {/* Hero */}
       <section className="relative py-24 md:py-32 bg-charcoal overflow-hidden">
         <div className="absolute inset-0 opacity-20">
-          <img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=1920&q=80" alt="" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=1920&q=80" alt="Client testimonials background - modern interior design space" className="w-full h-full object-cover" />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl">

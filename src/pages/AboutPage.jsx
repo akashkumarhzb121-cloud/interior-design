@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, Award, Users, Target, Heart } from 'lucide-react'
 import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
+import { useSEO } from '@/hooks/useSEO'
 
 const team = [
   {
@@ -47,12 +48,27 @@ const milestones = [
 ]
 
 export default function AboutPage() {
+  const { HelmetComponent } = useSEO({
+    title: 'About Modplint Interiors',
+    description: "Learn about Modplint Interiors' story, team, and philosophy. Mumbai's premier luxury interior design studio crafting extraordinary spaces since 2024.",
+    keywords: 'about Modplint Interiors, interior design team Mumbai, luxury design studio, about us',
+    canonical: 'https://www.modplintinteriors.com/about',
+    ogTitle: 'About Modplint Interiors | Our Story & Team',
+    ogDescription: 'Discover our journey, team, and commitment to luxury interior design excellence in Mumbai.',
+    ogUrl: 'https://www.modplintinteriors.com/about',
+    breadcrumb: [
+      { name: 'Home', url: 'https://www.modplintinteriors.com/' },
+      { name: 'About', url: 'https://www.modplintinteriors.com/about' },
+    ],
+  })
+
   return (
     <>
+      <HelmetComponent />
       {/* Hero Section */}
       <section className="relative py-24 md:py-32 bg-charcoal overflow-hidden">
         <div className="absolute inset-0 opacity-20">
-          <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&q=80" alt="" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1920&q=80" alt="Modplint Interiors design team at work in Mumbai studio" className="w-full h-full object-cover" />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl">

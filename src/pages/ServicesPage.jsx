@@ -6,6 +6,7 @@ import { Section, SectionHeader } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { ServiceCardSkeleton } from '@/components/ui/Skeleton'
 import { servicesApi } from '@/api/services'
+import { useSEO } from '@/hooks/useSEO'
 import { cn } from '@/lib/utils'
 import PayButton from '@/components/PayButton'
 
@@ -151,12 +152,27 @@ export default function ServicesPage() {
     fetchServices()
   }, [])
 
+  const { HelmetComponent } = useSEO({
+    title: 'Interior Design Services',
+    description: 'Explore our comprehensive interior design services: residential design, commercial spaces, renovation, styling, consultation, and custom furniture in Mumbai.',
+    keywords: 'interior design services, residential design, commercial spaces, renovation, interior styling, consultation, custom furniture, Mumbai',
+    canonical: 'https://www.modplintinteriors.com/services',
+    ogTitle: 'Our Interior Design Services | Modplint Interiors',
+    ogDescription: 'Comprehensive interior design services for residential, commercial, and hospitality spaces.',
+    ogUrl: 'https://www.modplintinteriors.com/services',
+    breadcrumb: [
+      { name: 'Home', url: 'https://www.modplintinteriors.com/' },
+      { name: 'Services', url: 'https://www.modplintinteriors.com/services' },
+    ],
+  })
+
   return (
     <>
+      <HelmetComponent />
       {/* Hero */}
       <section className="relative py-24 md:py-32 bg-charcoal overflow-hidden">
         <div className="absolute inset-0 opacity-20">
-          <img src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920&q=80" alt="" className="w-full h-full object-cover" />
+          <img src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920&q=80" alt="Interior design services showcase - luxury residential space" className="w-full h-full object-cover" />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl">

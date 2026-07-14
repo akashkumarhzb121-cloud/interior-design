@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Input, Textarea, Select } from '../components/ui/Input';
 import { FadeIn, StaggerContainer, StaggerItem } from '../components/animations/PageTransition';
 import { bookingsApi } from '../api/services';
+import { useSEO } from '../hooks/useSEO';
 
 const timeSlots = [
   '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM',
@@ -57,29 +58,47 @@ export default function BookingPage() {
     }
   };
 
+  const { HelmetComponent } = useSEO({
+    title: 'Book a Free Consultation',
+    description: 'Schedule a personalized interior design consultation with our expert team. Get professional guidance for your project in Mumbai.',
+    keywords: 'book consultation, schedule appointment, free consultation, interior design consultation, booking',
+    canonical: 'https://www.modplintinteriors.com/booking',
+    ogTitle: 'Book Your Free Consultation | Modplint Interiors',
+    ogDescription: 'Schedule a personalized design consultation with our expert team.',
+    ogUrl: 'https://www.modplintinteriors.com/booking',
+    breadcrumb: [
+      { name: 'Home', url: 'https://www.modplintinteriors.com/' },
+      { name: 'Booking', url: 'https://www.modplintinteriors.com/booking' },
+    ],
+  });
+
   if (isSuccess) {
     return (
-      <Section className="min-h-screen flex items-center justify-center">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="text-center max-w-md"
-        >
-          <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-primary" />
-          </div>
-          <h2 className="text-3xl font-serif text-foreground mb-4">Booking Confirmed!</h2>
-          <p className="text-muted-foreground mb-8">
-            Thank you for scheduling a consultation with us. We will contact you shortly to confirm your appointment.
-          </p>
-          <Button onClick={() => setIsSuccess(false)}>Book Another Consultation</Button>
-        </motion.div>
-      </Section>
+      <>
+        <HelmetComponent />
+        <Section className="min-h-screen flex items-center justify-center">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-center max-w-md"
+          >
+            <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-10 h-10 text-primary" />
+            </div>
+            <h2 className="text-3xl font-serif text-foreground mb-4">Booking Confirmed!</h2>
+            <p className="text-muted-foreground mb-8">
+              Thank you for scheduling a consultation with us. We will contact you shortly to confirm your appointment.
+            </p>
+            <Button onClick={() => setIsSuccess(false)}>Book Another Consultation</Button>
+          </motion.div>
+        </Section>
+      </>
     );
   }
 
   return (
     <>
+      <HelmetComponent />
       <Section className="pt-32 pb-16 bg-secondary/30">
         <FadeIn>
           <SectionHeader
@@ -200,7 +219,7 @@ export default function BookingPage() {
                 <div className="space-y-4 text-muted-foreground">
                   <p className="flex items-center gap-3">
                     <Phone className="w-5 h-5 text-primary" />
-                    +91 8741072815
+                    +91-8104648421
                   </p>
                   <p className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-primary" />

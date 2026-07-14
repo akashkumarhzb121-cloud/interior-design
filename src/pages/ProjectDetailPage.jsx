@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
 import Modal from '@/components/ui/Modal'
 import { projectsApi } from '@/api/services'
+import { useSEO } from '@/hooks/useSEO'
 
 import 'swiper/css'
 import 'swiper/css/navigation'
@@ -105,8 +106,25 @@ export default function ProjectDetailPage() {
     ? project.images.map(normaliseMedia).filter(Boolean)
     : FALLBACK_IMAGES.map((url) => ({ url, resourceType: 'image' }))
 
+  const { HelmetComponent } = useSEO({
+    title: project.title ? `${project.title} - Interior Design Project` : 'Project Details',
+    description: project.description || 'View details of our interior design project.',
+    keywords: `${project.title || 'project'}, interior design, ${project.category || 'project'}, portfolio`,
+    canonical: `https://www.modplintinteriors.com/projects/${id}`,
+    ogTitle: project.title ? `${project.title} - Interior Design Project` : 'Project Details',
+    ogDescription: project.description || 'View details of our interior design project.',
+    ogUrl: `https://www.modplintinteriors.com/projects/${id}`,
+    ogImage: mediaItems[0]?.url || 'https://www.modplintinteriors.com/og-image.jpg',
+    breadcrumb: [
+      { name: 'Home', url: 'https://www.modplintinteriors.com/' },
+      { name: 'Projects', url: 'https://www.modplintinteriors.com/projects' },
+      { name: project.title || 'Project', url: `https://www.modplintinteriors.com/projects/${id}` },
+    ],
+  })
+
   return (
     <>
+      <HelmetComponent />
       <div className="min-h-screen pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
