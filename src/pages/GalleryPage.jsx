@@ -120,7 +120,7 @@ function Lightbox({ items, startIndex, onClose }) {
                   <Play className="w-3 h-3 text-white fill-white" />
                 </div>
               ) : (
-                <img src={it.url} alt="" className="w-full h-full object-cover" />
+                <img src={it.url} alt="Gallery image - interior design portfolio" className="w-full h-full object-cover" />
               )}
             </button>
           ))}

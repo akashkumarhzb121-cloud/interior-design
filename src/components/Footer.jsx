@@ -16,6 +16,7 @@ const footerLinks = {
     { href: '/projects',     label: 'Our Projects' },
     { href: '/services',     label: 'Services' },
     { href: '/testimonials', label: 'Testimonials' },
+    { href: '/contact',      label: 'Contact Us' },
   ],
   services: [
     { href: '/services', label: 'Residential Design' },
@@ -168,7 +169,7 @@ export default function Footer() {
                   href="tel:+918104648421"
                   className="text-white/70 hover:text-gold transition-colors text-sm"
                 >
-                  +91 8104648421
+                  +91-8104648421
                 </a>
               </li>
               <li className="flex items-center gap-3">

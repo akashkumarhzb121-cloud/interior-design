@@ -15,7 +15,7 @@ function MediaPreviewStrip({ previews, onRemove }) {
           {p.type === 'video' ? (
             <video src={p.src} className="w-full h-full object-cover" muted />
           ) : (
-            <img src={p.src} alt="" className="w-full h-full object-cover" />
+            <img src={p.src} alt="Testimonial upload preview" className="w-full h-full object-cover" />
           )}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
           <span className="absolute top-0.5 left-0.5 bg-black/60 text-white rounded px-1 py-0 text-[9px] flex items-center gap-0.5">
