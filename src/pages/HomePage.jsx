@@ -113,15 +113,17 @@ export default function HomePage() {
               className="max-w-3xl"
             >
               <span className="inline-block px-4 py-2 bg-gold/20 backdrop-blur text-gold text-sm font-medium rounded-full mb-6">
-                Premium Interior Design in Mumbai
+                Luxury Interior Design Mumbai
               </span>
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif font-bold text-white leading-tight">
-                Transform Your Space Into a{' '}
-                <span className="text-gold">Masterpiece</span>
+                Modplint Interiors Transform Your{' '}
+                <span className="text-gold">Space</span>
               </h1>
               <p className="mt-6 text-lg md:text-xl text-white/80 max-w-xl leading-relaxed">
-                Experience luxury living with our bespoke interior design solutions.
-                From concept to completion, we create spaces that inspire.
+                At Modplint Interiors, we create luxurious and functional
+                interiors for homes, offices, apartments, villas, and commercial spaces.
+                From design consultation to turnkey execution, we transform your vision
+                into beautifully crafted spaces across Mumbai.
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
                 <Link to="/booking">
