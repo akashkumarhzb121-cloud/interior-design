@@ -25,8 +25,8 @@ const footerLinks = {
     { href: '/services', label: 'Consultation' },
   ],
   legal: [
-    { href: '#', label: 'Privacy Policy' },
-    { href: '#', label: 'Terms of Service' },
+    { href: '/privacy-policy', label: 'Privacy Policy' },
+    { href: '/privacy-policy', label: 'Terms of Service' },
   ],
 }
 

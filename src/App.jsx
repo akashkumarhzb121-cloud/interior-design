@@ -15,6 +15,7 @@ import TestimonialsPage from './pages/TestimonialsPage';
 import ContactPage from './pages/ContactPage';
 import BookingPage from './pages/BookingPage';
 import NotFoundPage from './pages/NotFoundPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 // Admin Pages
 import AdminLoginPage from './pages/admin/AdminLoginPage';
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="testimonials" element={<TestimonialsPage />} />
           <Route path="contact" element={<ContactPage />} />
           <Route path="booking" element={<BookingPage />} />
+          <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
         </Route>
 
         {/* Admin Login */}
